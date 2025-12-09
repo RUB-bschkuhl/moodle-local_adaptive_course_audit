@@ -56,6 +56,12 @@ $string['adaptive_course_audit:view'] = 'Access the Adaptive course audit course
 
 // Loop 1 rule strings.
 $string['rule_loop_1_name'] = 'Loop 1: knowledge build-up then quiz';
+$string['rule_loop_1_headline_min_items'] = 'Add more activities';
+$string['rule_loop_1_headline_missing_quiz'] = 'Quiz missing';
+$string['rule_loop_1_headline_missing_kb'] = 'Add knowledge-building first';
+$string['rule_loop_1_headline_quiz_no_precondition'] = 'Quiz needs prerequisite';
+$string['rule_loop_1_headline_no_followups'] = 'Add follow-up dependencies';
+$string['rule_loop_1_headline_success'] = 'Loop 1 pattern ready';
 $string['rule_loop_1_description'] = 'Checks for a sequence with knowledge-building activities leading into a quiz that gates follow-up activities.';
 $string['rule_loop_1_min_items'] = 'Add at least {$a} visible activities to structure this sequence.';
 $string['rule_loop_1_missing_quiz'] = 'Add a quiz so learners can demonstrate knowledge before progressing.';

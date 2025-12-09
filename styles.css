@@ -1,0 +1,70 @@
+/* Adaptive course audit tour sprite styling */
+[data-flexitour="container"] .local-aca-tour-animated {
+    position: relative;
+    overflow: visible;
+}
+
+[data-flexitour="container"] .local-aca-tour-sprite {
+    position: absolute;
+    top: 50%;
+    left: calc(100% + 8px);
+    width: 265px;
+    height: 193px;
+    background-repeat: no-repeat;
+    background-position: 0 0;
+    transform: translateY(-50%) scale(0.25);
+    transform-origin: top left;
+    pointer-events: none;
+    image-rendering: auto;
+    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.25));
+}
+
+[data-flexitour="container"] .local-aca-tour-sprite.local-aca-tour-sprite--talk {
+    animation: local-aca-sprite-talk 0.96s steps(4) 2 alternate forwards;
+}
+
+[data-flexitour="container"] .local-aca-tour-sprite.local-aca-tour-sprite--wink {
+    animation: local-aca-sprite-wink 1.44s steps(5) 2 alternate forwards;
+}
+
+.local-adaptive-course-audit-hero {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.local-adaptive-course-audit-hero-text {
+    flex: 1 1 auto;
+}
+
+.local-adaptive-course-audit-hero-image {
+    flex: 0 0 auto;
+}
+
+.local-adaptive-course-audit-hero-img {
+    display: block;
+    max-width: 140px;
+    height: auto;
+    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.18));
+}
+
+@keyframes local-aca-sprite-talk {
+    from {
+        background-position: 0 0;
+    }
+    to {
+        background-position: 0 -772px;
+    }
+}
+
+@keyframes local-aca-sprite-wink {
+    from {
+        background-position: 0 0;
+    }
+    to {
+        background-position: 0 -965px;
+    }
+}
+

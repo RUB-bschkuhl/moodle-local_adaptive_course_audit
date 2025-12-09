@@ -38,6 +38,8 @@ function local_adaptive_course_audit_extend_navigation_course(
     stdClass $course,
     context $context
 ): void {
+    global $PAGE, $DB;
+
     if (!has_capability('local/adaptive_course_audit:view', $context)) {
         return;
     }
@@ -57,5 +59,30 @@ function local_adaptive_course_audit_extend_navigation_course(
         $nodekey,
         new pix_icon('i/report', '')
     );
+
+    $hastour = false;
+    try {
+        $hastour = $DB->record_exists('local_adaptive_course_tour', ['courseid' => $course->id]);
+    } catch (Throwable $exception) {
+        debugging('Error checking adaptive course audit tour mapping: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+    }
+
+    $iscourseview = strpos((string)$PAGE->pagetype, 'course-view') === 0;
+
+    if ($hastour && $iscourseview) {
+        try {
+            $PAGE->requires->css(new moodle_url('/local/adaptive_course_audit/styles.css'));
+            $PAGE->requires->js_call_amd(
+                'local_adaptive_course_audit/tour_sprites',
+                'init',
+                [
+                    'talkSpriteUrl' => (new moodle_url('/local/adaptive_course_audit/pix/miau_talk_sprite.png'))->out(false),
+                    'winkSpriteUrl' => (new moodle_url('/local/adaptive_course_audit/pix/miau_wink_sprite.png'))->out(false),
+                ]
+            );
+        } catch (Throwable $exception) {
+            debugging('Error loading adaptive course audit sprites: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+        }
+    }
 }
 

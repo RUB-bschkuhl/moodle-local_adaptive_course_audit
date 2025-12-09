@@ -215,8 +215,12 @@ final class service {
      */
     private static function add_loop_results_as_steps(tour_manager $manager, array $results): void {
         foreach ($results as $result) {
-            $statusprefix = $result->status ? '[OK] ' : '[Hint] ';
-            $title = $statusprefix . ($result->rule_name ?? get_string('reviewcourseheading', 'local_adaptive_course_audit'));
+            $statusprefix = $result->status ? '[OK] ' : '';
+            $headline = $result->headline ?? '';
+            if ($headline === '') {
+                $headline = $result->rule_name ?? get_string('reviewcourseheading', 'local_adaptive_course_audit');
+            }
+            $title = $statusprefix . $headline;
 
             $messages = [];
             if (!empty($result->messages)) {
@@ -280,7 +284,7 @@ final class service {
                     [
                         'placement' => 'right',
                         'orphan' => true,
-                        'backdrop' => false,
+                        'backdrop' => true,
                     ]
                 );
             } catch (\Throwable $exception) {

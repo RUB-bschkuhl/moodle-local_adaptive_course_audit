@@ -70,7 +70,7 @@ final class manager
     public function create_tour(string $name, string $description, string $pathmatch, array $config = []): tour
     {
         global $USER;
-        
+
         $tour = new tour();
         $tour->set_name($name);
         $tour->set_description($description);
@@ -100,7 +100,7 @@ final class manager
             [
                 'placement' => 'right',
                 'orphan' => true,
-                'backdrop' => false,
+                'backdrop' => true,
             ]
         );
 

@@ -63,9 +63,16 @@ class loop_1 extends rule_base {
         $modules = $this->get_visible_modules($target);
 
         if (count($modules) < 3) {
-            return $this->create_result(false, [
-                get_string('rule_loop_1_min_items', 'local_adaptive_course_audit', 3),
-            ], (int)$target->section, (int)$course->id);
+            return $this->create_result(
+                false,
+                [
+                    get_string('rule_loop_1_min_items', 'local_adaptive_course_audit', 3),
+                ],
+                (int)$target->section,
+                (int)$course->id,
+                [],
+                get_string('rule_loop_1_headline_min_items', 'local_adaptive_course_audit')
+            );
         }
 
         $quizzes = array_filter($modules, function ($cm) {
@@ -95,7 +102,8 @@ class loop_1 extends rule_base {
                 ],
                 (int)$target->section,
                 (int)$course->id,
-                $actions
+                $actions,
+                get_string('rule_loop_1_headline_missing_quiz', 'local_adaptive_course_audit')
             );
         }
 
@@ -107,9 +115,16 @@ class loop_1 extends rule_base {
         });
 
         if (empty($knowledgebuilding)) {
-            return $this->create_result(false, [
-                get_string('rule_loop_1_missing_kb', 'local_adaptive_course_audit'),
-            ], (int)$target->section, (int)$course->id);
+            return $this->create_result(
+                false,
+                [
+                    get_string('rule_loop_1_missing_kb', 'local_adaptive_course_audit'),
+                ],
+                (int)$target->section,
+                (int)$course->id,
+                [],
+                get_string('rule_loop_1_headline_missing_kb', 'local_adaptive_course_audit')
+            );
         }
 
         $quizwithavailability = $this->find_quiz_with_availability($quizzes);
@@ -138,16 +153,24 @@ class loop_1 extends rule_base {
                 ],
                 (int)$target->section,
                 (int)$course->id,
-                $actions
+                $actions,
+                get_string('rule_loop_1_headline_quiz_no_precondition', 'local_adaptive_course_audit')
             );
         }
 
         [$dependentcount, $dependents] = $this->count_modules_depending_on_quiz($modules, (int)$quizwithavailability->id);
 
         if ($dependentcount === 0) {
-            return $this->create_result(false, [
-                get_string('rule_loop_1_no_followups', 'local_adaptive_course_audit'),
-            ], (int)$target->section, (int)$course->id);
+            return $this->create_result(
+                false,
+                [
+                    get_string('rule_loop_1_no_followups', 'local_adaptive_course_audit'),
+                ],
+                (int)$target->section,
+                (int)$course->id,
+                [],
+                get_string('rule_loop_1_headline_no_followups', 'local_adaptive_course_audit')
+            );
         }
 
         $messages = [
@@ -167,7 +190,14 @@ class loop_1 extends rule_base {
             ]);
         }
 
-        return $this->create_result(true, $messages, (int)$target->section, (int)$course->id);
+        return $this->create_result(
+            true,
+            $messages,
+            (int)$target->section,
+            (int)$course->id,
+            [],
+            get_string('rule_loop_1_headline_success', 'local_adaptive_course_audit')
+        );
     }
 
     /**

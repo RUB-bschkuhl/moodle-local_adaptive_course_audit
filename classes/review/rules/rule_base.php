@@ -109,11 +109,12 @@ abstract class rule_base implements rule_interface {
     /**
      * Build a simple result object.
      *
-     * @param bool $status
-     * @param array $messages
-     * @param int|null $targetid
-     * @param int|null $courseid
+     * @param bool $status Result status.
+     * @param array $messages Result messages.
+     * @param int $targetid Target identifier.
+     * @param int $courseid Course identifier.
      * @param array $actions Optional associative arrays with 'label', 'url', and 'type'.
+     * @param string $headline Short headline describing the specific result.
      * @return object
      */
     protected function create_result(
@@ -121,7 +122,8 @@ abstract class rule_base implements rule_interface {
         array $messages = [],
         int $targetid,
         int $courseid,
-        array $actions = []
+        array $actions = [],
+        string $headline = ''
     ): object {
         return (object)[
             'status' => $status,
@@ -133,6 +135,7 @@ abstract class rule_base implements rule_interface {
             'rule_target_id' => $targetid,
             'course_id' => $courseid,
             'actions' => $actions,
+            'headline' => ($headline !== '') ? $headline : $this->name,
         ];
     }
 }

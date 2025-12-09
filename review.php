@@ -44,6 +44,7 @@ $PAGE->set_title($pageheading);
 $PAGE->set_heading($coursename);
 $PAGE->navbar->add($pageheading);
 navigation_node::override_active_url($url);
+$PAGE->requires->css(new moodle_url('/local/adaptive_course_audit/styles.css'));
 
 if ($action === 'startreview') {
     require_sesskey();
@@ -74,12 +75,25 @@ if ($action === 'startreview') {
 }
 
 $intro = '';
+$introimage = '';
 
 try {
     $intro = get_string('reviewcourseintro', 'local_adaptive_course_audit', $coursename);
 } catch (Throwable $exception) {
     debugging('Error in course audit: ' . $exception->getMessage(), DEBUG_DEVELOPER);
     $intro = get_string('reviewcourseerror', 'local_adaptive_course_audit');
+}
+
+try {
+    $introimageurl = new moodle_url('/local/adaptive_course_audit/pix/02_Intro_Katze_transparent.gif');
+    $introimage = html_writer::empty_tag('img', [
+        'src' => $introimageurl->out(false),
+        'alt' => get_string('reviewcoursenode', 'local_adaptive_course_audit'),
+        'class' => 'local-adaptive-course-audit-hero-img',
+        'loading' => 'lazy',
+    ]);
+} catch (Throwable $exception) {
+    debugging('Error loading adaptive course audit intro image: ' . $exception->getMessage(), DEBUG_DEVELOPER);
 }
 
 $startreviewdescription = get_string('reviewcoursedescription', 'local_adaptive_course_audit');
@@ -198,7 +212,11 @@ $table = html_writer::tag('table',
 
 echo $OUTPUT->header();
 echo $OUTPUT->heading($pageheading);
-echo html_writer::div(s($intro), 'local-adaptive-course-audit-intro');
+echo html_writer::div(
+    html_writer::div(s($intro), 'local-adaptive-course-audit-hero-text') .
+    ($introimage !== '' ? html_writer::div($introimage, 'local-adaptive-course-audit-hero-image') : ''),
+    'local-adaptive-course-audit-hero'
+);
 echo html_writer::div(s($startreviewhelp), 'local-adaptive-course-audit-help');
 echo html_writer::div($table, 'local-adaptive-course-audit-table-wrapper');
 echo $OUTPUT->footer();
