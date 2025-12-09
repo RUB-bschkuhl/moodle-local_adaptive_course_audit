@@ -89,7 +89,6 @@ final class service {
 
         return [
             'status' => true,
-            'message' => get_string('startreviewsuccess', 'local_adaptive_course_audit'),
         ];
     }
 

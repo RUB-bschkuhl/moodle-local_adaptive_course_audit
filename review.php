@@ -53,10 +53,7 @@ if ($action === 'startreview') {
         $reviewresult = review_service::start_review((int)$course->id, $sectionid > 0 ? $sectionid : null);
         if (!empty($reviewresult['status'])) {
             redirect(
-                new moodle_url('/course/view.php', ['id' => $course->id]),
-                get_string('startreviewsuccess', 'local_adaptive_course_audit'),
-                0,
-                \core\output\notification::NOTIFY_SUCCESS
+                new moodle_url('/course/view.php', ['id' => $course->id])
             );
         }
 
@@ -76,12 +73,19 @@ if ($action === 'startreview') {
 
 $intro = '';
 $introimage = '';
+$loop1summary = '';
 
 try {
     $intro = get_string('reviewcourseintro', 'local_adaptive_course_audit', $coursename);
 } catch (Throwable $exception) {
     debugging('Error in course audit: ' . $exception->getMessage(), DEBUG_DEVELOPER);
     $intro = get_string('reviewcourseerror', 'local_adaptive_course_audit');
+}
+
+try {
+    $loop1summary = get_string('loop1summary', 'local_adaptive_course_audit');
+} catch (Throwable $exception) {
+    debugging('Error in course audit: ' . $exception->getMessage(), DEBUG_DEVELOPER);
 }
 
 try {
@@ -218,6 +222,9 @@ echo html_writer::div(
     'local-adaptive-course-audit-hero'
 );
 echo html_writer::div(s($startreviewhelp), 'local-adaptive-course-audit-help');
+if (!empty($loop1summary)) {
+    echo html_writer::div(s($loop1summary), 'local-adaptive-course-audit-loop-summary');
+}
 echo html_writer::div($table, 'local-adaptive-course-audit-table-wrapper');
 echo $OUTPUT->footer();
 
