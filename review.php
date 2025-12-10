@@ -136,10 +136,11 @@ if ($hasmanagecap) {
     );
 }
 
-$rows[] = html_writer::tag('tr',
+$rows[] = html_writer::tag(
+    'tr',
     html_writer::tag('td', get_string('reviewtypeadaptive', 'local_adaptive_course_audit')) .
-    html_writer::tag('td', s($startreviewdescription)) .
-    html_writer::tag('td', $actioncell, ['class' => 'local-adaptive-course-audit-actions'])
+        html_writer::tag('td', s($startreviewdescription)) .
+        html_writer::tag('td', $actioncell, ['class' => 'local-adaptive-course-audit-actions'])
 );
 
 $sectionrows = [];
@@ -153,7 +154,8 @@ try {
 if (!empty($sectioninfoall)) {
     foreach ($sectioninfoall as $sectioninfo) {
         if ((property_exists($sectioninfo, 'visible') && !$sectioninfo->visible) ||
-            (property_exists($sectioninfo, 'uservisible') && !$sectioninfo->uservisible)) {
+            (property_exists($sectioninfo, 'uservisible') && !$sectioninfo->uservisible)
+        ) {
             continue;
         }
 
@@ -190,10 +192,11 @@ if (!empty($sectioninfoall)) {
             );
         }
 
-        $sectionrows[] = html_writer::tag('tr',
+        $sectionrows[] = html_writer::tag(
+            'tr',
             html_writer::tag('td', ' - ' . get_string('reviewtypesection', 'local_adaptive_course_audit', $sectionname)) .
-            html_writer::tag('td', s($sectiondescription)) .
-            html_writer::tag('td', $actioncell, ['class' => 'local-adaptive-course-audit-actions'])
+                html_writer::tag('td', s($sectiondescription)) .
+                html_writer::tag('td', $actioncell, ['class' => 'local-adaptive-course-audit-actions'])
         );
     }
 }
@@ -202,15 +205,18 @@ if (!empty($sectionrows)) {
     $rows = array_merge($rows, $sectionrows);
 }
 
-$table = html_writer::tag('table',
-    html_writer::tag('thead',
-        html_writer::tag('tr',
-            implode('', array_map(function($header) {
+$table = html_writer::tag(
+    'table',
+    html_writer::tag(
+        'thead',
+        html_writer::tag(
+            'tr',
+            implode('', array_map(function ($header) {
                 return html_writer::tag('th', $header);
             }, $tableheaders))
         )
     ) .
-    html_writer::tag('tbody', implode('', $rows)),
+        html_writer::tag('tbody', implode('', $rows)),
     ['class' => 'generaltable local-adaptive-course-audit-table']
 );
 
@@ -218,7 +224,7 @@ echo $OUTPUT->header();
 echo $OUTPUT->heading($pageheading);
 echo html_writer::div(
     html_writer::div(s($intro), 'local-adaptive-course-audit-hero-text') .
-    ($introimage !== '' ? html_writer::div($introimage, 'local-adaptive-course-audit-hero-image') : ''),
+        ($introimage !== '' ? html_writer::div($introimage, 'local-adaptive-course-audit-hero-image') : ''),
     'local-adaptive-course-audit-hero'
 );
 echo html_writer::div(s($startreviewhelp), 'local-adaptive-course-audit-help');
@@ -227,4 +233,3 @@ if (!empty($loop1summary)) {
 }
 echo html_writer::div($table, 'local-adaptive-course-audit-table-wrapper');
 echo $OUTPUT->footer();
-

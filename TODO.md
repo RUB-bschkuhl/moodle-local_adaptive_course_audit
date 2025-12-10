@@ -1,0 +1,1 @@
+Dont use tourplaceholdercontent in the tour steps for the action tours

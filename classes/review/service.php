@@ -59,6 +59,7 @@ final class service {
 
         $manager = new tour_manager();
         self::delete_existing_tour((int)$course->id, $manager);
+        self::delete_existing_action_tours((int)$course->id);
 
         $coursename = format_string($course->fullname, true, ['context' => $context]);
         $tourname = get_string('tourname', 'local_adaptive_course_audit', $course->shortname);
@@ -83,6 +84,7 @@ final class service {
             $sanitisedsectionid = ($sectionid !== null && $sectionid > 0) ? (int)$sectionid : null;
             $results = self::run_loop_checks((int)$course->id, $sanitisedsectionid);
             self::add_loop_results_as_steps($manager, $results);
+            self::create_action_tours($course, $results);
         } catch (\Throwable $exception) {
             debugging('Error running adaptive course audit loops: ' . $exception->getMessage(), DEBUG_DEVELOPER);
         }
@@ -291,5 +293,144 @@ final class service {
             }
         }
     }
+
+    /**
+     * Remove any adaptive action tours for the given course.
+     *
+     * @param int $courseid
+     * @return void
+     */
+    private static function delete_existing_action_tours(int $courseid): void {
+        global $DB;
+
+        try {
+            $records = $DB->get_records_sql(
+                'SELECT id, configdata FROM {tool_usertours_tours} WHERE configdata LIKE ?',
+                ['%"local_adaptive_course_audit_action"%']
+            );
+        } catch (\Throwable $exception) {
+            debugging('Error fetching adaptive action tours: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+            return;
+        }
+
+        if (empty($records)) {
+            return;
+        }
+
+        $manager = new tour_manager();
+        foreach ($records as $record) {
+            try {
+                $config = json_decode((string)$record->configdata, true);
+                if (!is_array($config)) {
+                    continue;
+                }
+
+                $isplugin = !empty($config['local_adaptive_course_audit_action']);
+                $samecourse = isset($config['local_adaptive_course_audit_courseid'])
+                    && (int)$config['local_adaptive_course_audit_courseid'] === $courseid;
+                if (!$isplugin || !$samecourse) {
+                    continue;
+                }
+
+                $manager->delete_tour((int)$record->id);
+            } catch (\Throwable $exception) {
+                debugging('Error deleting adaptive action tour: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+            }
+        }
+    }
+
+    /**
+     * Create tours that guide the user through a chosen action.
+     *
+     * @param object $course
+     * @param array $results
+     * @return void
+     */
+    private static function create_action_tours($course, array $results): void {
+        $coursecontext = context_course::instance($course->id);
+        $courseshortname = format_string($course->shortname, true, ['context' => $coursecontext]);
+
+        foreach ($results as $result) {
+            if (empty($result->actions) || !is_array($result->actions)) {
+                continue;
+            }
+
+            foreach ($result->actions as $action) {
+                if (empty($action['tour']) || empty($action['tour']['steps']) || !is_array($action['tour']['steps'])) {
+                    continue;
+                }
+
+                if (empty($action['tour']['pathmatch'])) {
+                    debugging('Action tour missing pathmatch, skipping tour creation', DEBUG_DEVELOPER);
+                    continue;
+                }
+                $pathmatch = $action['tour']['pathmatch'];
+
+                $tourkey = $action['tour']['key'] ?? sha1($pathmatch);
+                $actionlabel = !empty($action['label'])
+                    ? (string)$action['label']
+                    : get_string('startreview', 'local_adaptive_course_audit');
+
+                $tourname = $action['tour']['name'] ?? get_string('actiontourname', 'local_adaptive_course_audit', (object)[
+                    'action' => $actionlabel,
+                ]);
+
+                $tourdescription = $action['tour']['description'] ?? get_string('actiontourdescription', 'local_adaptive_course_audit', (object)[
+                    'course' => $courseshortname,
+                ]);
+
+                $tourconfig = array_merge([
+                    'displaystepnumbers' => true,
+                    'showtourwhen' => tour::SHOW_TOUR_UNTIL_COMPLETE,
+                    'backdrop' => true,
+                    'reflex' => false,
+                    'local_adaptive_course_audit_action' => 1,
+                    'local_adaptive_course_audit_courseid' => (int)$course->id,
+                    'local_adaptive_course_audit_key' => $tourkey,
+                ], $action['tour']['config'] ?? []);
+
+                $manager = new tour_manager();
+
+                debugging('Creating action tour with pathmatch: ' . $pathmatch, DEBUG_DEVELOPER);
+
+                try {
+                    $tour = $manager->create_tour($tourname, $tourdescription, $pathmatch, $tourconfig, false);
+                    debugging('Created action tour ID: ' . $tour->get_id() . ' with pathmatch: ' . $tour->get_pathmatch(), DEBUG_DEVELOPER);
+                } catch (\Throwable $exception) {
+                    debugging('Error creating adaptive action tour: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+                    continue;
+                }
+
+                foreach ($action['tour']['steps'] as $step) {
+                    $title = !empty($step['title']) ? (string)$step['title'] : $tourname;
+                    $content = !empty($step['content']) ? (string)$step['content'] : '';
+                    $targettype = !empty($step['targettype'])
+                        ? (string)$step['targettype']
+                        : (string)target::TARGET_UNATTACHED;
+                    $targetvalue = !empty($step['targetvalue']) ? (string)$step['targetvalue'] : '';
+                    $config = !empty($step['config']) && is_array($step['config']) ? $step['config'] : [];
+
+                    try {
+                        $manager->add_step(
+                            $title,
+                            html_writer::tag('p', s($content)),
+                            $targettype,
+                            $targetvalue,
+                            $config
+                        );
+                    } catch (\Throwable $exception) {
+                        debugging('Error adding adaptive action tour step: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+                    }
+                }
+
+                try {
+                    $manager->reset_tour_for_all_users((int)$tour->get_id());
+                } catch (\Throwable $exception) {
+                    debugging('Error resetting adaptive action tour: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+                }
+            }
+        }
+    }
+
 }
 

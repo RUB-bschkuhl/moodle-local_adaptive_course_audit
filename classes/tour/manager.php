@@ -65,9 +65,16 @@ final class manager
      * @param string $description
      * @param string $pathmatch
      * @param array $config
+     * @param bool $addplaceholderstep Whether to prepend the default intro step.
      * @return tour
      */
-    public function create_tour(string $name, string $description, string $pathmatch, array $config = []): tour
+    public function create_tour(
+        string $name,
+        string $description,
+        string $pathmatch,
+        array $config = [],
+        bool $addplaceholderstep = true
+    ): tour
     {
         global $USER;
 
@@ -80,8 +87,10 @@ final class manager
         if (method_exists($tour, 'set_ondemand')) {
             $tour->set_ondemand(tour::DISABLED);
         }
-        // Ensure the tour only runs when the course content is present.
-        $tour->set_filter_values('cssselector', ["#nav-notification-popover-container[data-userid=\"{$USER->id}\"]"]); //Add data-userid="$userid" here
+
+        // Ensure the tour only shows for the user who started it.
+        // The notification popover exists on all pages with the navbar.
+        $tour->set_filter_values('cssselector', ["#nav-notification-popover-container[data-userid=\"{$USER->id}\"]"]);
 
         $tour->set_sortorder(0);
 
@@ -92,17 +101,19 @@ final class manager
         $tour->persist();
         $this->tour = $tour;
 
-        $this->add_step(
-            get_string('tourplaceholdertitle', 'local_adaptive_course_audit'),
-            get_string('tourplaceholdercontent', 'local_adaptive_course_audit'),
-            (string)target::TARGET_UNATTACHED,
-            '',
-            [
-                'placement' => 'right',
-                'orphan' => true,
-                'backdrop' => true,
-            ]
-        );
+        if ($addplaceholderstep) {
+            $this->add_step(
+                get_string('tourplaceholdertitle', 'local_adaptive_course_audit'),
+                get_string('tourplaceholdercontent', 'local_adaptive_course_audit'),
+                (string)target::TARGET_UNATTACHED,
+                '',
+                [
+                    'placement' => 'right',
+                    'orphan' => true,
+                    'backdrop' => true,
+                ]
+            );
+        }
 
         return $tour;
     }

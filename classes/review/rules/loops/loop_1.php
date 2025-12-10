@@ -22,6 +22,7 @@ defined('MOODLE_INTERNAL') || die();
 
 use local_adaptive_course_audit\review\rules\mod_classifier;
 use local_adaptive_course_audit\review\rules\rule_base;
+use tool_usertours\target;
 
 /**
  * Loop 1 rule: checks for knowledge building -> quiz -> dependent follow-ups.
@@ -80,18 +81,57 @@ class loop_1 extends rule_base {
         });
 
         if (empty($quizzes)) {
+            $addquizurl = new \moodle_url('/course/modedit.php', [
+                'add' => 'quiz',
+                'course' => (int)$course->id,
+                'section' => (int)$target->section,
+                'return' => 0,
+                'sr' => 0,
+                'sesskey' => sesskey(),
+            ]);
+            // Pathmatch uses wildcard before params since Moodle may add sr/return params first.
+            $addquizpathmatch = '/course/modedit.php%add=quiz%section=' . (int)$target->section . '%course=' . (int)$course->id . '%';
             $actions = [
                 [
                     'label' => get_string('touraction_add_quiz', 'local_adaptive_course_audit'),
-                    'url' => (new \moodle_url('/course/modedit.php', [
-                        'add' => 'quiz',
-                        'course' => (int)$course->id,
-                        'section' => (int)$target->section,
-                        'return' => 0,
-                        'sr' => 0,
-                        'sesskey' => sesskey(),
-                    ]))->out(false),
+                    'url' => $addquizurl,
                     'type' => 'primary',
+                    'tour' => [
+                        'key' => 'loop1_add_quiz_section_' . (int)$target->section,
+                        'pathmatch' => $addquizpathmatch,
+                        'steps' => [
+                            [
+                                'title' => get_string('actiontour_loop1_addquiz_step_name_title', 'local_adaptive_course_audit'),
+                                'content' => get_string('actiontour_loop1_addquiz_step_name_body', 'local_adaptive_course_audit'),
+                                'targettype' => (string)target::TARGET_SELECTOR,
+                                'targetvalue' => '#id_name',
+                                'config' => [
+                                    'placement' => 'right',
+                                    'backdrop' => true,
+                                ],
+                            ],
+                            [
+                                'title' => get_string('actiontour_loop1_addquiz_step_completion_title', 'local_adaptive_course_audit'),
+                                'content' => get_string('actiontour_loop1_addquiz_step_completion_body', 'local_adaptive_course_audit'),
+                                'targettype' => (string)target::TARGET_SELECTOR,
+                                'targetvalue' => 'fieldset#id_activitycompletionheader',
+                                'config' => [
+                                    'placement' => 'right',
+                                    'backdrop' => true,
+                                ],
+                            ],
+                            [
+                                'title' => get_string('actiontour_loop1_addquiz_step_access_title', 'local_adaptive_course_audit'),
+                                'content' => get_string('actiontour_loop1_addquiz_step_access_body', 'local_adaptive_course_audit'),
+                                'targettype' => (string)target::TARGET_SELECTOR,
+                                'targetvalue' => 'fieldset#id_availabilityconditionsheader',
+                                'config' => [
+                                    'placement' => 'right',
+                                    'backdrop' => true,
+                                ],
+                            ],
+                        ],
+                    ],
                 ],
             ];
 
@@ -134,15 +174,44 @@ class loop_1 extends rule_base {
             $actions = [];
 
             if ($quizcm !== false) {
+                $editquizurl = new \moodle_url('/course/modedit.php', [
+                    'update' => (int)$quizcm->id,
+                    'return' => 0,
+                    'sr' => 0,
+                    'sesskey' => sesskey(),
+                ]);
+                // Pathmatch uses wildcard before and after update param since Moodle may reorder params.
+                $editquizpathmatch = '/course/modedit.php%update=' . (int)$quizcm->id . '%';
                 $actions[] = [
                     'label' => get_string('touraction_edit_quiz_settings', 'local_adaptive_course_audit', $quizcm->name),
-                    'url' => (new \moodle_url('/course/modedit.php', [
-                        'update' => (int)$quizcm->id,
-                        'return' => 0,
-                        'sr' => 0,
-                        'sesskey' => sesskey(),
-                    ]))->out(false),
+                    'url' => $editquizurl,
                     'type' => 'secondary',
+                    'tour' => [
+                        'key' => 'loop1_quiz_settings_' . (int)$quizcm->id,
+                        'pathmatch' => $editquizpathmatch,
+                        'steps' => [
+                            [
+                                'title' => get_string('actiontour_loop1_editquiz_step_access_title', 'local_adaptive_course_audit'),
+                                'content' => get_string('actiontour_loop1_editquiz_step_access_body', 'local_adaptive_course_audit'),
+                                'targettype' => (string)target::TARGET_SELECTOR,
+                                'targetvalue' => 'fieldset#id_availabilityconditionsheader',
+                                'config' => [
+                                    'placement' => 'right',
+                                    'backdrop' => true,
+                                ],
+                            ],
+                            [
+                                'title' => get_string('actiontour_loop1_editquiz_step_completion_title', 'local_adaptive_course_audit'),
+                                'content' => get_string('actiontour_loop1_editquiz_step_completion_body', 'local_adaptive_course_audit'),
+                                'targettype' => (string)target::TARGET_SELECTOR,
+                                'targetvalue' => 'fieldset#id_activitycompletionheader',
+                                'config' => [
+                                    'placement' => 'right',
+                                    'backdrop' => true,
+                                ],
+                            ],
+                        ],
+                    ],
                 ];
             }
 
