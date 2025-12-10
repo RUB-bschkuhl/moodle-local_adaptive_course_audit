@@ -404,7 +404,7 @@ final class service {
                 foreach ($action['tour']['steps'] as $step) {
                     $title = !empty($step['title']) ? (string)$step['title'] : $tourname;
                     $content = !empty($step['content']) ? (string)$step['content'] : '';
-                    $targettype = !empty($step['targettype'])
+                    $targettype = !empty($step['targettype']) || $step['targettype'] == 0
                         ? (string)$step['targettype']
                         : (string)target::TARGET_UNATTACHED;
                     $targetvalue = !empty($step['targetvalue']) ? (string)$step['targetvalue'] : '';

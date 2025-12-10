@@ -1,1 +1,8 @@
-Dont use tourplaceholdercontent in the tour steps for the action tours
+rename loops to templates
+Delete logik nach tour abschluss
+MIau button in kurs nach tour
+
+Quiz adaptiv eingestellt prüfen
+mehr How tos?
+Voreingestellte Feedbacks für fragen prüfen
+Integration von Bausteinen (Aktivitätsgruppen?)
