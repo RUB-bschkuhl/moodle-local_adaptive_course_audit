@@ -15,18 +15,24 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Version metadata for the Adaptive course audit local plugin.
+ * Scheduled tasks for the Adaptive course audit local plugin.
  *
  * @package     local_adaptive_course_audit
- * @copyright   2025 Moodle HQ
- * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @category    task
  */
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version   = 2026020900;
-$plugin->requires  = 2024100700; // Moodle 4.5 release.
-$plugin->component = 'local_adaptive_course_audit';
-$plugin->maturity  = MATURITY_ALPHA;
-$plugin->release   = '0.2.1';
+$tasks = [
+    [
+        'classname' => 'local_adaptive_course_audit\task\cleanup_tours',
+        'blocking' => 0,
+        'minute' => 'R',
+        'hour' => '*',
+        'day' => '*',
+        'month' => '*',
+        'dayofweek' => '*',
+        'disabled' => 0,
+    ],
+];
 

@@ -85,7 +85,8 @@ final class manager
         $tour->set_enabled(tour::ENABLED);
 
         if (method_exists($tour, 'set_ondemand')) {
-            $tour->set_ondemand(tour::DISABLED);
+            // Some Moodle versions expose this setter; keep it compatible.
+            call_user_func([$tour, 'set_ondemand'], tour::DISABLED);
         }
 
         // Ensure the tour only shows for the user who started it.
@@ -97,6 +98,9 @@ final class manager
         foreach ($config as $key => $value) {
             $tour->set_config($key, $value);
         }
+
+        // Mark this tour as owned by this plugin (used by event observers).
+        $tour->set_config('local_adaptive_course_audit', 1);
 
         $tour->persist();
         $this->tour = $tour;

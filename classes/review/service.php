@@ -21,7 +21,14 @@ namespace local_adaptive_course_audit\review;
 defined('MOODLE_INTERNAL') || die();
 
 use context_course;
-use local_adaptive_course_audit\review\rules\loops\loop_1;
+use local_adaptive_course_audit\review\rules\loops\loop_branch_by_grade;
+use local_adaptive_course_audit\review\rules\loops\loop_diagnostic_checkpoint;
+use local_adaptive_course_audit\review\rules\loops\loop_h5p_interactive;
+use local_adaptive_course_audit\review\rules\loops\loop_quiz_unlock_followups;
+use local_adaptive_course_audit\review\rules\loops\loop_lesson_branching;
+use local_adaptive_course_audit\review\rules\loops\loop_quiz_adaptive_behaviour;
+use local_adaptive_course_audit\review\rules\loops\loop_quiz_feedback;
+use local_adaptive_course_audit\review\rules\loops\loop_quiz_random_questions;
 use local_adaptive_course_audit\tour\manager as tour_manager;
 use html_writer;
 use moodle_exception;
@@ -37,6 +44,102 @@ use tool_usertours\tour;
  */
 final class service {
     private const TOUR_TABLE = 'local_adaptive_course_tour';
+
+ /**
+     * Format plain text as safe HTML paragraphs.
+     *
+     * @param string $text
+     * @return string
+     */
+    private static function format_plain_text_as_html(string $text): string {
+        $text = trim($text);
+        if ($text === '') {
+            return '';
+        }
+
+        $paragraphs = preg_split("/\\R{2,}/", $text) ?: [];
+        $out = [];
+
+        foreach ($paragraphs as $paragraph) {
+            $paragraph = trim((string)$paragraph);
+            if ($paragraph === '') {
+                continue;
+            }
+            // Preserve single line breaks within a paragraph.
+            $out[] = html_writer::tag('p', nl2br(s($paragraph), false));
+        }
+
+        return implode('', $out);
+    }
+
+    /**
+     * Format the first message (usually rationale) as a highlighted block.
+     *
+     * If the rationale contains HTML, render it as cleaned HTML (FORMAT_HTML).
+     * Otherwise, try to split it into a short heading and body at the first colon.
+     *
+     * @param string $rationale
+     * @param context_course|null $context
+     * @return string
+     */
+    private static function format_rationale_block(string $rationale, ?context_course $context = null): string {
+        $rationale = trim($rationale);
+        if ($rationale === '') {
+            return '';
+        }
+
+        // Allow richer formatting when the string intentionally contains HTML.
+        if (strpos($rationale, '<') !== false && strpos($rationale, '>') !== false) {
+            $options = ['filter' => false];
+            if ($context !== null) {
+                $options['context'] = $context;
+            }
+            $html = format_text($rationale, FORMAT_HTML, $options);
+            return html_writer::div($html, 'local-aca-tour-rationale');
+        }
+
+        $heading = '';
+        $body = $rationale;
+        $colonpos = strpos($rationale, ':');
+        if ($colonpos !== false) {
+            $candidateheading = trim(substr($rationale, 0, $colonpos));
+            $candidatebody = trim(substr($rationale, $colonpos + 1));
+            // Avoid treating normal sentences with colon as headings.
+            if ($candidateheading !== '' && $candidatebody !== '' && \core_text::strlen($candidateheading) <= 80) {
+                $heading = $candidateheading;
+                $body = $candidatebody;
+            }
+        }
+
+        $titlehtml = ($heading !== '')
+            ? html_writer::tag('h5', s($heading), ['class' => 'local-aca-tour-rationale-title'])
+            : '';
+
+        return html_writer::div($titlehtml . self::format_plain_text_as_html($body), 'local-aca-tour-rationale');
+    }
+
+    /**
+     * Format action tour step content.
+     *
+     * @param string $content
+     * @param context_course $context
+     * @return string
+     */
+    private static function format_action_tour_step_content(string $content, context_course $context): string {
+        $content = trim($content);
+        if ($content === '') {
+            return '';
+        }
+
+        if (strpos($content, '<') !== false && strpos($content, '>') !== false) {
+            return format_text($content, FORMAT_HTML, [
+                'context' => $context,
+                'filter' => false,
+            ]);
+        }
+
+        return self::format_plain_text_as_html($content);
+    }
 
     /**
      * Start an adaptive review for the provided course.
@@ -79,7 +182,7 @@ final class service {
 
         $manager->reset_tour_for_all_users((int)$tour->get_id());
 
-        // Run loop-based checks (currently Loop 1) to gather adaptive insights.
+        // Run loop-based checks to gather adaptive insights.
         try {
             $sanitisedsectionid = ($sectionid !== null && $sectionid > 0) ? (int)$sectionid : null;
             $results = self::run_loop_checks((int)$course->id, $sanitisedsectionid);
@@ -152,7 +255,16 @@ final class service {
         $targetsectionid = ($sectionid !== null && $sectionid > 0) ? $sectionid : null;
         $hasmatchingsection = false;
 
-        $looprule = new loop_1();
+        $looprules = [
+            new loop_quiz_unlock_followups(),
+            new loop_branch_by_grade(),
+            new loop_quiz_feedback(),
+            new loop_quiz_adaptive_behaviour(),
+            new loop_quiz_random_questions(),
+            new loop_lesson_branching(),
+            new loop_h5p_interactive(),
+            new loop_diagnostic_checkpoint(),
+        ];
 
         foreach ($sections as $sectioninfo) {
             if ($targetsectionid !== null && (int)$sectioninfo->id !== $targetsectionid) {
@@ -184,15 +296,22 @@ final class service {
                     'id' => $cm->id,
                     'name' => $cm->name,
                     'modname' => $cm->modname,
+                    'instance' => $cm->instance,
                     'availability' => $cm->availability,
                     'uservisible' => $cm->uservisible,
                     'deletioninprogress' => $cm->deletioninprogress,
                 ];
             }
 
-            $result = $looprule->check_target($section, $course);
-            if ($result !== null) {
-                $results[] = $result;
+            foreach ($looprules as $looprule) {
+                try {
+                    $result = $looprule->check_target($section, $course);
+                    if ($result !== null) {
+                        $results[] = $result;
+                    }
+                } catch (\Throwable $exception) {
+                    debugging('Error running adaptive course audit loop rule: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+                }
             }
         }
 
@@ -223,16 +342,49 @@ final class service {
             }
             $title = $statusprefix . $headline;
 
-            $messages = [];
-            if (!empty($result->messages)) {
-                foreach ($result->messages as $message) {
-                    $messages[] = '<li>' . s($message) . '</li>';
+            $context = null;
+            if (!empty($result->course_id)) {
+                try {
+                    $context = context_course::instance((int)$result->course_id);
+                } catch (\Throwable $exception) {
+                    $context = null;
                 }
             }
 
-            $content = !empty($messages)
-                ? '<ul>' . implode('', $messages) . '</ul>'
-                : '<p>' . s(get_string('startreviewhelp', 'local_adaptive_course_audit')) . '</p>';
+            $rawmessages = [];
+            if (!empty($result->messages) && is_array($result->messages)) {
+                $rawmessages = array_values($result->messages);
+            }
+
+            $contentchunks = [];
+            if (!empty($rawmessages)) {
+                $rationale = (string)array_shift($rawmessages);
+                if ($rationale !== '') {
+                    $contentchunks[] = self::format_rationale_block($rationale, $context);
+                }
+
+                if (!empty($rawmessages)) {
+                    if (count($rawmessages) === 1) {
+                        $contentchunks[] = self::format_plain_text_as_html((string)$rawmessages[0]);
+                    } else {
+                        $items = [];
+                        foreach ($rawmessages as $message) {
+                            $items[] = html_writer::tag('li', self::format_plain_text_as_html((string)$message));
+                        }
+                        $contentchunks[] = html_writer::tag('ul', implode('', $items), [
+                            'class' => 'local-aca-tour-message-list',
+                        ]);
+                    }
+                }
+            }
+
+            if (empty($contentchunks)) {
+                $contentchunks[] = self::format_plain_text_as_html(
+                    (string)get_string('startreviewhelp', 'local_adaptive_course_audit')
+                );
+            }
+
+            $content = html_writer::div(implode('', $contentchunks), 'local-aca-tour-step-content');
 
             $actionshtml = '';
             if (!empty($result->actions) && is_array($result->actions)) {
@@ -413,7 +565,7 @@ final class service {
                     try {
                         $manager->add_step(
                             $title,
-                            html_writer::tag('p', s($content)),
+                            self::format_action_tour_step_content($content, $coursecontext),
                             $targettype,
                             $targetvalue,
                             $config

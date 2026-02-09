@@ -73,7 +73,7 @@ if ($action === 'startreview') {
 
 $intro = '';
 $introimage = '';
-$loop1summary = '';
+$loopsummary = '';
 
 try {
     $intro = get_string('reviewcourseintro', 'local_adaptive_course_audit', $coursename);
@@ -83,7 +83,7 @@ try {
 }
 
 try {
-    $loop1summary = get_string('loop1summary', 'local_adaptive_course_audit');
+    $loopsummary = get_string('loop_quiz_unlock_followups_summary', 'local_adaptive_course_audit');
 } catch (Throwable $exception) {
     debugging('Error in course audit: ' . $exception->getMessage(), DEBUG_DEVELOPER);
 }
@@ -102,6 +102,57 @@ try {
 
 $startreviewdescription = get_string('reviewcoursedescription', 'local_adaptive_course_audit');
 $startreviewhelp = get_string('startreviewhelp', 'local_adaptive_course_audit');
+
+$materialsblock = '';
+try {
+    $materialsintro = get_string('reviewcoursematerialsintro', 'local_adaptive_course_audit');
+
+    $materialfiles = [
+        [
+            'filename' => 'Leitfaden_adaptiveLehre_2025.pdf',
+            'label' => get_string('reviewcoursematerial_leitfaden', 'local_adaptive_course_audit'),
+        ],
+        [
+            'filename' => 'MIau_AdaptiveLehre_LEHRELADEN_final.pdf',
+            'label' => get_string('reviewcoursematerial_miau', 'local_adaptive_course_audit'),
+        ],
+    ];
+
+    $materialitems = [];
+    foreach ($materialfiles as $materialfile) {
+        if (empty($materialfile['filename']) || empty($materialfile['label'])) {
+            continue;
+        }
+
+        $diskpath = __DIR__ . '/files/' . $materialfile['filename'];
+        if (!file_exists($diskpath)) {
+            continue;
+        }
+
+        $fileurl = new moodle_url('/local/adaptive_course_audit/files/' . $materialfile['filename']);
+        $materialitems[] = html_writer::tag(
+            'li',
+            html_writer::link(
+                $fileurl,
+                s($materialfile['label']),
+                [
+                    'target' => '_blank',
+                    'rel' => 'noopener',
+                ]
+            )
+        );
+    }
+
+    if (!empty($materialitems)) {
+        $materialsblock = html_writer::div(
+            html_writer::tag('div', s($materialsintro), ['class' => 'local-adaptive-course-audit-materials-intro']) .
+                html_writer::tag('ul', implode('', $materialitems), ['class' => 'local-adaptive-course-audit-materials-list']),
+            'local-adaptive-course-audit-materials'
+        );
+    }
+} catch (Throwable $exception) {
+    debugging('Error building adaptive course audit materials block: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+}
 
 $tableheaders = [
     get_string('reviewcoltitle', 'local_adaptive_course_audit'),
@@ -228,8 +279,11 @@ echo html_writer::div(
     'local-adaptive-course-audit-hero'
 );
 echo html_writer::div(s($startreviewhelp), 'local-adaptive-course-audit-help');
-if (!empty($loop1summary)) {
-    echo html_writer::div(s($loop1summary), 'local-adaptive-course-audit-loop-summary');
+if (!empty($materialsblock)) {
+    echo $materialsblock;
+}
+if (!empty($loopsummary)) {
+    echo html_writer::div(s($loopsummary), 'local-adaptive-course-audit-loop-summary');
 }
 echo html_writer::div($table, 'local-adaptive-course-audit-table-wrapper');
 echo $OUTPUT->footer();

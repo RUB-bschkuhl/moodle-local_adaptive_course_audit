@@ -25,13 +25,13 @@ use local_adaptive_course_audit\review\rules\rule_base;
 use tool_usertours\target;
 
 /**
- * Loop 1 rule: checks for knowledge building -> quiz -> dependent follow-ups.
+ * Quiz unlock follow-ups rule: checks for knowledge building -> quiz -> dependent follow-ups.
  *
  * @package     local_adaptive_course_audit
  */
-class loop_1 extends rule_base {
+class loop_quiz_unlock_followups extends rule_base {
     /** @var string Rule identifier. */
-    public const rule_key = 'loop_1';
+    public const rule_key = 'loop_quiz_unlock_followups';
 
     /** @var string Target type. */
     public const target_type = 'section';
@@ -43,8 +43,8 @@ class loop_1 extends rule_base {
         parent::__construct(
             self::rule_key,
             self::target_type,
-            get_string('rule_loop_1_name', 'local_adaptive_course_audit'),
-            get_string('rule_loop_1_description', 'local_adaptive_course_audit'),
+            get_string('rule_loop_quiz_unlock_followups_name', 'local_adaptive_course_audit'),
+            get_string('rule_loop_quiz_unlock_followups_description', 'local_adaptive_course_audit'),
             'hint'
         );
     }
@@ -61,18 +61,22 @@ class loop_1 extends rule_base {
             return null;
         }
 
+        $rationale = get_string('rule_loop_quiz_unlock_followups_rationale', 'local_adaptive_course_audit');
+
         $modules = $this->get_visible_modules($target);
 
+        //Regel minimale Items in Section.
         if (count($modules) < 3) {
             return $this->create_result(
                 false,
                 [
-                    get_string('rule_loop_1_min_items', 'local_adaptive_course_audit', 3),
+                    $rationale,
+                    get_string('rule_loop_quiz_unlock_followups_min_items', 'local_adaptive_course_audit', 3),
                 ],
                 (int)$target->section,
                 (int)$course->id,
                 [],
-                get_string('rule_loop_1_headline_min_items', 'local_adaptive_course_audit')
+                get_string('rule_loop_quiz_unlock_followups_headline_min_items', 'local_adaptive_course_audit')
             );
         }
 
@@ -80,6 +84,7 @@ class loop_1 extends rule_base {
             return $cm->modname === 'quiz';
         });
 
+        //Regel missing quiz in Section.
         if (empty($quizzes)) {
             $addquizurl = new \moodle_url('/course/modedit.php', [
                 'add' => 'quiz',
@@ -97,12 +102,12 @@ class loop_1 extends rule_base {
                     'url' => $addquizurl,
                     'type' => 'primary',
                     'tour' => [
-                        'key' => 'loop1_add_quiz_section_' . (int)$target->section,
+                        'key' => 'loop_quiz_unlock_followups_add_quiz_section_' . (int)$target->section,
                         'pathmatch' => $addquizpathmatch,
                         'steps' => [
                             [
-                                'title' => get_string('actiontour_loop1_addquiz_step_name_title', 'local_adaptive_course_audit'),
-                                'content' => get_string('actiontour_loop1_addquiz_step_name_body', 'local_adaptive_course_audit'),
+                                'title' => get_string('actiontour_loop_quiz_unlock_followups_addquiz_step_name_title', 'local_adaptive_course_audit'),
+                                'content' => get_string('actiontour_loop_quiz_unlock_followups_addquiz_step_name_body', 'local_adaptive_course_audit'),
                                 'targettype' => (string)target::TARGET_SELECTOR,
                                 'targetvalue' => '#id_name',
                                 'config' => [
@@ -111,8 +116,8 @@ class loop_1 extends rule_base {
                                 ],
                             ],
                             [
-                                'title' => get_string('actiontour_loop1_addquiz_step_completion_title', 'local_adaptive_course_audit'),
-                                'content' => get_string('actiontour_loop1_addquiz_step_completion_body', 'local_adaptive_course_audit'),
+                                'title' => get_string('actiontour_loop_quiz_unlock_followups_addquiz_step_completion_title', 'local_adaptive_course_audit'),
+                                'content' => get_string('actiontour_loop_quiz_unlock_followups_addquiz_step_completion_body', 'local_adaptive_course_audit'),
                                 'targettype' => (string)target::TARGET_SELECTOR,
                                 'targetvalue' => 'fieldset#id_activitycompletionheader',
                                 'config' => [
@@ -121,8 +126,8 @@ class loop_1 extends rule_base {
                                 ],
                             ],
                             [
-                                'title' => get_string('actiontour_loop1_addquiz_step_access_title', 'local_adaptive_course_audit'),
-                                'content' => get_string('actiontour_loop1_addquiz_step_access_body', 'local_adaptive_course_audit'),
+                                'title' => get_string('actiontour_loop_quiz_unlock_followups_addquiz_step_access_title', 'local_adaptive_course_audit'),
+                                'content' => get_string('actiontour_loop_quiz_unlock_followups_addquiz_step_access_body', 'local_adaptive_course_audit'),
                                 'targettype' => (string)target::TARGET_SELECTOR,
                                 'targetvalue' => 'fieldset#id_availabilityconditionsheader',
                                 'config' => [
@@ -138,12 +143,13 @@ class loop_1 extends rule_base {
             return $this->create_result(
                 false,
                 [
-                    get_string('rule_loop_1_missing_quiz', 'local_adaptive_course_audit'),
+                    $rationale,
+                    get_string('rule_loop_quiz_unlock_followups_missing_quiz', 'local_adaptive_course_audit'),
                 ],
                 (int)$target->section,
                 (int)$course->id,
                 $actions,
-                get_string('rule_loop_1_headline_missing_quiz', 'local_adaptive_course_audit')
+                get_string('rule_loop_quiz_unlock_followups_headline_missing_quiz', 'local_adaptive_course_audit')
             );
         }
 
@@ -154,16 +160,18 @@ class loop_1 extends rule_base {
             return mod_classifier::is_module_in_category($cm->modname, mod_classifier::MOD_WISSENSAUFBAU);
         });
 
+        //Regel missing knowledge building in Section.
         if (empty($knowledgebuilding)) {
             return $this->create_result(
                 false,
                 [
-                    get_string('rule_loop_1_missing_kb', 'local_adaptive_course_audit'),
+                    $rationale,
+                    get_string('rule_loop_quiz_unlock_followups_missing_kb', 'local_adaptive_course_audit'),
                 ],
                 (int)$target->section,
                 (int)$course->id,
                 [],
-                get_string('rule_loop_1_headline_missing_kb', 'local_adaptive_course_audit')
+                get_string('rule_loop_quiz_unlock_followups_headline_missing_kb', 'local_adaptive_course_audit')
             );
         }
 
@@ -187,12 +195,12 @@ class loop_1 extends rule_base {
                     'url' => $editquizurl,
                     'type' => 'secondary',
                     'tour' => [
-                        'key' => 'loop1_quiz_settings_' . (int)$quizcm->id,
+                        'key' => 'loop_quiz_unlock_followups_quiz_settings_' . (int)$quizcm->id,
                         'pathmatch' => $editquizpathmatch,
                         'steps' => [
                             [
-                                'title' => get_string('actiontour_loop1_editquiz_step_access_title', 'local_adaptive_course_audit'),
-                                'content' => get_string('actiontour_loop1_editquiz_step_access_body', 'local_adaptive_course_audit'),
+                                'title' => get_string('actiontour_loop_quiz_unlock_followups_editquiz_step_access_title', 'local_adaptive_course_audit'),
+                                'content' => get_string('actiontour_loop_quiz_unlock_followups_editquiz_step_access_body', 'local_adaptive_course_audit'),
                                 'targettype' => (string)target::TARGET_SELECTOR,
                                 'targetvalue' => 'fieldset#id_availabilityconditionsheader',
                                 'config' => [
@@ -201,8 +209,8 @@ class loop_1 extends rule_base {
                                 ],
                             ],
                             [
-                                'title' => get_string('actiontour_loop1_editquiz_step_completion_title', 'local_adaptive_course_audit'),
-                                'content' => get_string('actiontour_loop1_editquiz_step_completion_body', 'local_adaptive_course_audit'),
+                                'title' => get_string('actiontour_loop_quiz_unlock_followups_editquiz_step_completion_title', 'local_adaptive_course_audit'),
+                                'content' => get_string('actiontour_loop_quiz_unlock_followups_editquiz_step_completion_body', 'local_adaptive_course_audit'),
                                 'targettype' => (string)target::TARGET_SELECTOR,
                                 'targetvalue' => 'fieldset#id_activitycompletionheader',
                                 'config' => [
@@ -218,12 +226,13 @@ class loop_1 extends rule_base {
             return $this->create_result(
                 false,
                 [
-                    get_string('rule_loop_1_quiz_no_precondition', 'local_adaptive_course_audit'),
+                    $rationale,
+                    get_string('rule_loop_quiz_unlock_followups_quiz_no_precondition', 'local_adaptive_course_audit'),
                 ],
                 (int)$target->section,
                 (int)$course->id,
                 $actions,
-                get_string('rule_loop_1_headline_quiz_no_precondition', 'local_adaptive_course_audit')
+                get_string('rule_loop_quiz_unlock_followups_headline_quiz_no_precondition', 'local_adaptive_course_audit')
             );
         }
 
@@ -233,27 +242,29 @@ class loop_1 extends rule_base {
             return $this->create_result(
                 false,
                 [
-                    get_string('rule_loop_1_no_followups', 'local_adaptive_course_audit'),
+                    $rationale,
+                    get_string('rule_loop_quiz_unlock_followups_no_followups', 'local_adaptive_course_audit'),
                 ],
                 (int)$target->section,
                 (int)$course->id,
                 [],
-                get_string('rule_loop_1_headline_no_followups', 'local_adaptive_course_audit')
+                get_string('rule_loop_quiz_unlock_followups_headline_no_followups', 'local_adaptive_course_audit')
             );
         }
 
         $messages = [
-            get_string('rule_loop_1_success', 'local_adaptive_course_audit'),
+            $rationale,
+            get_string('rule_loop_quiz_unlock_followups_success', 'local_adaptive_course_audit'),
         ];
 
         if ($dependentcount < 2) {
-            $messages[] = get_string('rule_loop_1_additional_followups', 'local_adaptive_course_audit', [
+            $messages[] = get_string('rule_loop_quiz_unlock_followups_additional_followups', 'local_adaptive_course_audit', [
                 'activity' => $quizwithavailability->name,
             ]);
         }
 
         if (!empty($dependents)) {
-            $messages[] = get_string('rule_loop_1_followup_list', 'local_adaptive_course_audit', [
+            $messages[] = get_string('rule_loop_quiz_unlock_followups_followup_list', 'local_adaptive_course_audit', [
                 'count' => $dependentcount,
                 'items' => implode(', ', $dependents),
             ]);
@@ -265,7 +276,7 @@ class loop_1 extends rule_base {
             (int)$target->section,
             (int)$course->id,
             [],
-            get_string('rule_loop_1_headline_success', 'local_adaptive_course_audit')
+            get_string('rule_loop_quiz_unlock_followups_headline_success', 'local_adaptive_course_audit')
         );
     }
 

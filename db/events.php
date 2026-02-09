@@ -15,18 +15,19 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Version metadata for the Adaptive course audit local plugin.
+ * Event observers for Adaptive course audit.
  *
  * @package     local_adaptive_course_audit
- * @copyright   2025 Moodle HQ
+ * @copyright   2026
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version   = 2026020900;
-$plugin->requires  = 2024100700; // Moodle 4.5 release.
-$plugin->component = 'local_adaptive_course_audit';
-$plugin->maturity  = MATURITY_ALPHA;
-$plugin->release   = '0.2.1';
+$observers = [
+    [
+        'eventname' => \tool_usertours\event\tour_ended::class,
+        'callback' => \local_adaptive_course_audit\observer::class . '::tour_ended',
+    ],
+];
 

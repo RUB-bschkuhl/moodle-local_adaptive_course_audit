@@ -6,8 +6,8 @@
 
 [data-flexitour="container"] .local-aca-tour-sprite {
     position: absolute;
-    top: 50%;
-    left: calc(100% + 8px);
+    top: 46px;
+    right: 0;
     width: 265px;
     height: 193px;
     background-repeat: no-repeat;
@@ -49,6 +49,73 @@
     height: auto;
     filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.18));
 }
+
+.local-adaptive-course-audit-materials {
+    margin: 10px 0 12px;
+    padding: 10px 12px;
+    border-left: 4px solid rgba(108, 117, 125, 0.8);
+    background: rgba(108, 117, 125, 0.08);
+}
+
+.local-adaptive-course-audit-materials-intro {
+    font-weight: 600;
+}
+
+.local-adaptive-course-audit-materials-list {
+    margin: 6px 0 0 18px;
+}
+
+
+/* Adaptive course audit tour step formatting */
+[data-flexitour="container"] .local-aca-tour-step-content p {
+    margin: 0 0 0.5rem;
+}
+
+[data-flexitour="container"] .local-aca-tour-rationale {
+    margin: 0 0 0.75rem;
+    padding: 0.6rem 0.75rem;
+    border-left: 4px solid rgba(13, 110, 253, 0.6);
+    background: rgba(13, 110, 253, 0.06);
+    border-radius: 0.25rem;
+}
+
+[data-flexitour="container"] .local-aca-tour-rationale-title {
+    margin: 0 0 0.35rem;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+[data-flexitour="container"] .local-aca-tour-rationale h1,
+[data-flexitour="container"] .local-aca-tour-rationale h2,
+[data-flexitour="container"] .local-aca-tour-rationale h3,
+[data-flexitour="container"] .local-aca-tour-rationale h4,
+[data-flexitour="container"] .local-aca-tour-rationale h5,
+[data-flexitour="container"] .local-aca-tour-rationale h6 {
+    margin: 0 0 0.35rem;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+[data-flexitour="container"] .local-aca-tour-rationale ul,
+[data-flexitour="container"] .local-aca-tour-rationale ol {
+    margin: 0.35rem 0 0.5rem 1.2rem;
+}
+
+[data-flexitour="container"] .local-aca-tour-message-list {
+    margin: 0 0 0 1.2rem;
+}
+
+[data-flexitour="container"] .local-aca-tour-message-list li {
+    margin: 0 0 0.35rem;
+}
+
+[data-flexitour="container"] .local-adaptive-course-audit-step-actions {
+    margin-top: 0.85rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
 
 @keyframes local-aca-sprite-talk {
     from {
