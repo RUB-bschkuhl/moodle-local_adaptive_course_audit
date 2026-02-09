@@ -45,6 +45,17 @@ use tool_usertours\tour;
 final class service {
     private const TOUR_TABLE = 'local_adaptive_course_tour';
 
+    /** @var string Teach tour key: quiz behaviour guidance. */
+    private const TEACH_KEY_QUIZ_BEHAVIOUR = 'quizbehaviour';
+    /** @var string Teach tour key: quiz feedback guidance. */
+    private const TEACH_KEY_QUIZ_FEEDBACK = 'quizfeedback';
+    /** @var string Teach tour key: quiz review options guidance. */
+    private const TEACH_KEY_QUIZ_REVIEW_OPTIONS = 'quizreviewoptions';
+    /** @var string Teach tour key: quiz grading guidance. */
+    private const TEACH_KEY_QUIZ_GRADING = 'quizgrading';
+    /** @var string Teach tour key: quiz timing and security guidance. */
+    private const TEACH_KEY_QUIZ_TIMING_SECURITY = 'quiztimingsecurity';
+
  /**
      * Format plain text as safe HTML paragraphs.
      *
@@ -195,6 +206,311 @@ final class service {
         return [
             'status' => true,
         ];
+    }
+
+    /**
+     * Start an on-demand teaching tour for a specific course module.
+     *
+     * The tour is created as a short-lived "action tour" (sub tour) and will auto-run
+     * on the target page via pathmatch. When the tour ends, the plugin observer will
+     * clean it up.
+     *
+     * @param int $courseid
+     * @param int $cmid
+     * @param string $teachkey
+     * @return array Array with status, redirect URL and optional message.
+     */
+    public static function start_teach_tour(int $courseid, int $cmid, string $teachkey): array {
+        $teachkey = trim($teachkey);
+        if ($courseid <= 0 || $cmid <= 0 || $teachkey === '') {
+            return [
+                'status' => false,
+                'message' => get_string('startteacherror', 'local_adaptive_course_audit'),
+            ];
+        }
+
+        $course = get_course($courseid);
+        $context = context_course::instance($course->id);
+        if (!$context) {
+            throw new moodle_exception('invalidcourseid');
+        }
+        /** @var \context $context */
+
+        /** @var context_course $coursecontext */
+        $coursecontext = $context;
+
+        require_capability('moodle/course:manageactivities', $context);
+
+        $modinfo = get_fast_modinfo($course->id);
+        try {
+            $cm = $modinfo->get_cm($cmid);
+        } catch (\Throwable $exception) {
+            debugging('Error resolving cm for adaptive teaching tour: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+            $cm = null;
+        }
+
+        if (empty($cm) || (int)$cm->course !== (int)$course->id) {
+            return [
+                'status' => false,
+                'message' => get_string('startteacherror', 'local_adaptive_course_audit'),
+            ];
+        }
+
+        if ((string)$cm->modname !== 'quiz') {
+            return [
+                'status' => false,
+                'message' => get_string('startteacherror', 'local_adaptive_course_audit'),
+            ];
+        }
+
+        $allowedteach = [
+            self::TEACH_KEY_QUIZ_BEHAVIOUR,
+            self::TEACH_KEY_QUIZ_FEEDBACK,
+            self::TEACH_KEY_QUIZ_REVIEW_OPTIONS,
+            self::TEACH_KEY_QUIZ_GRADING,
+            self::TEACH_KEY_QUIZ_TIMING_SECURITY,
+        ];
+        if (!in_array($teachkey, $allowedteach, true)) {
+            return [
+                'status' => false,
+                'message' => get_string('startteacherror', 'local_adaptive_course_audit'),
+            ];
+        }
+
+        $quizname = format_string((string)$cm->name, true, ['context' => $context]);
+        $editurl = new \moodle_url('/course/modedit.php', [
+            'update' => (int)$cmid,
+            'return' => 0,
+            'sr' => 0,
+            'sesskey' => sesskey(),
+        ]);
+        if ($teachkey === self::TEACH_KEY_QUIZ_BEHAVIOUR) {
+            $editurl->set_anchor('id_interactionhdrcontainer');
+        }
+        if ($teachkey === self::TEACH_KEY_QUIZ_FEEDBACK) {
+            $editurl->set_anchor('id_overallfeedbackhdr');
+        }
+        if ($teachkey === self::TEACH_KEY_QUIZ_REVIEW_OPTIONS) {
+            $editurl->set_anchor('id_reviewoptionshdr');
+        }
+        if ($teachkey === self::TEACH_KEY_QUIZ_GRADING) {
+            $editurl->set_anchor('id_gradehdr');
+        }
+        if ($teachkey === self::TEACH_KEY_QUIZ_TIMING_SECURITY) {
+            $editurl->set_anchor('id_timinghdr');
+        }
+        $pathmatch = '/course/modedit.php%update=' . (int)$cmid . '%';
+
+        $tourkey = 'teach_' . $teachkey . '_' . (int)$cmid;
+
+        $tourname = get_string('actiontourname', 'local_adaptive_course_audit', (object)[
+            'action' => $quizname,
+        ]);
+        $tourdescription = get_string('actiontourdescription', 'local_adaptive_course_audit', (object)[
+            'course' => format_string($course->shortname, true, ['context' => $context]),
+        ]);
+
+        $tourconfig = [
+            'displaystepnumbers' => true,
+            'showtourwhen' => tour::SHOW_TOUR_UNTIL_COMPLETE,
+            'backdrop' => true,
+            'reflex' => false,
+            'local_adaptive_course_audit_action' => 1,
+            'local_adaptive_course_audit_courseid' => (int)$course->id,
+            'local_adaptive_course_audit_key' => $tourkey,
+            'local_adaptive_course_audit_timecreated' => time(),
+        ];
+
+        $manager = new tour_manager();
+
+        // Ensure there is no unintended interaction with previously started tours in this course.
+        // This removes the main review tour (if any) and any existing action/sub tours owned by this plugin.
+        self::delete_existing_tour((int)$course->id, $manager);
+        self::delete_existing_action_tours((int)$course->id);
+
+        try {
+            $tour = $manager->create_tour($tourname, $tourdescription, $pathmatch, $tourconfig, false);
+        } catch (\Throwable $exception) {
+            debugging('Error creating adaptive teaching tour: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+            return [
+                'status' => false,
+                'message' => get_string('startteacherror', 'local_adaptive_course_audit'),
+            ];
+        }
+
+        try {
+            $steps = self::build_teach_tour_steps($teachkey, $quizname);
+            foreach ($steps as $step) {
+                $manager->add_step(
+                    (string)$step['title'],
+                    self::format_action_tour_step_content((string)$step['content'], $coursecontext),
+                    (string)$step['targettype'],
+                    (string)$step['targetvalue'],
+                    (array)$step['config']
+                );
+            }
+        } catch (\Throwable $exception) {
+            debugging('Error adding adaptive teaching tour steps: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+        }
+
+        try {
+            $manager->reset_tour_for_all_users((int)$tour->get_id());
+        } catch (\Throwable $exception) {
+            debugging('Error resetting adaptive teaching tour: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+        }
+
+        return [
+            'status' => true,
+            'redirect' => $editurl,
+        ];
+    }
+
+    /**
+     * Build tour steps for a teach key.
+     *
+     * @param string $teachkey
+     * @param string $quizname
+     * @return array[]
+     */
+    private static function build_teach_tour_steps(string $teachkey, string $quizname): array {
+        $commonconfig = [
+            'placement' => 'right',
+            'backdrop' => true,
+            'orphan' => true,
+        ];
+
+        if ($teachkey === self::TEACH_KEY_QUIZ_BEHAVIOUR) {
+            return [
+                [
+                    'title' => get_string('actiontour_quizbehaviour_step_behaviour_title', 'local_adaptive_course_audit'),
+                    'content' => get_string('actiontour_quizbehaviour_step_behaviour_body', 'local_adaptive_course_audit'),
+                    'targettype' => (string)target::TARGET_SELECTOR,
+                    'targetvalue' => '#id_preferredbehaviour',
+                    'config' => $commonconfig,
+                ],
+            ];
+        }
+
+        if ($teachkey === self::TEACH_KEY_QUIZ_FEEDBACK) {
+            return [
+                [
+                    'title' => get_string('actiontour_quizfeedback_step_overallfeedback_title', 'local_adaptive_course_audit'),
+                    'content' => get_string('actiontour_quizfeedback_step_overallfeedback_body', 'local_adaptive_course_audit'),
+                    'targettype' => (string)target::TARGET_SELECTOR,
+                    'targetvalue' => '#id_overallfeedbackhdr',
+                    'config' => $commonconfig,
+                ],
+                [
+                    'title' => get_string('actiontour_quizfeedback_step_attempts_title', 'local_adaptive_course_audit'),
+                    'content' => get_string('actiontour_quizfeedback_step_attempts_body', 'local_adaptive_course_audit'),
+                    'targettype' => (string)target::TARGET_SELECTOR,
+                    'targetvalue' => '#id_attempts',
+                    'config' => $commonconfig,
+                ],
+            ];
+        }
+
+        if ($teachkey === self::TEACH_KEY_QUIZ_REVIEW_OPTIONS) {
+            return [
+                [
+                    'title' => get_string('actiontour_quizreviewoptions_step_reviewoptions_title', 'local_adaptive_course_audit'),
+                    'content' => get_string('actiontour_quizreviewoptions_step_reviewoptions_body', 'local_adaptive_course_audit'),
+                    'targettype' => (string)target::TARGET_SELECTOR,
+                    'targetvalue' => '#id_reviewoptionshdr',
+                    'config' => $commonconfig,
+                ],
+            ];
+        }
+
+        if ($teachkey === self::TEACH_KEY_QUIZ_GRADING) {
+            return [
+                [
+                    'title' => get_string('actiontour_quizgrading_step_grade_title', 'local_adaptive_course_audit'),
+                    'content' => get_string('actiontour_quizgrading_step_grade_body', 'local_adaptive_course_audit'),
+                    'targettype' => (string)target::TARGET_SELECTOR,
+                    'targetvalue' => '#id_gradehdr',
+                    'config' => $commonconfig,
+                ],
+            ];
+        }
+
+        if ($teachkey === self::TEACH_KEY_QUIZ_TIMING_SECURITY) {
+            return [
+                [
+                    'title' => get_string('actiontour_quiztimingsecurity_step_timing_title', 'local_adaptive_course_audit'),
+                    'content' => get_string('actiontour_quiztimingsecurity_step_timing_body', 'local_adaptive_course_audit'),
+                    'targettype' => (string)target::TARGET_SELECTOR,
+                    'targetvalue' => '#id_timinghdr',
+                    'config' => $commonconfig,
+                ],
+                [
+                    'title' => get_string('actiontour_quiztimingsecurity_step_security_title', 'local_adaptive_course_audit'),
+                    'content' => get_string('actiontour_quiztimingsecurity_step_security_body', 'local_adaptive_course_audit'),
+                    'targettype' => (string)target::TARGET_SELECTOR,
+                    'targetvalue' => '#id_securityhdr',
+                    'config' => $commonconfig,
+                ],
+            ];
+        }
+
+        return [
+            [
+                'title' => $quizname,
+                'content' => get_string('startteacherror', 'local_adaptive_course_audit'),
+                'targettype' => (string)target::TARGET_UNATTACHED,
+                'targetvalue' => '',
+                'config' => $commonconfig,
+            ],
+        ];
+    }
+
+    /**
+     * Delete existing plugin-owned action tours for the same course and key.
+     *
+     * @param int $courseid
+     * @param string $key
+     * @return void
+     */
+    private static function delete_existing_action_tour_by_key(int $courseid, string $key): void {
+        global $DB;
+
+        $records = [];
+        try {
+            $records = $DB->get_records_sql(
+                'SELECT id, configdata FROM {tool_usertours_tours} WHERE configdata LIKE ?',
+                ['%"local_adaptive_course_audit_action"%']
+            );
+        } catch (\Throwable $exception) {
+            debugging('Error fetching adaptive action tours for key cleanup: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+            return;
+        }
+
+        if (empty($records)) {
+            return;
+        }
+
+        $manager = new tour_manager();
+        foreach ($records as $record) {
+            try {
+                $config = json_decode((string)$record->configdata, true);
+                if (!is_array($config)) {
+                    continue;
+                }
+
+                $isplugin = !empty($config['local_adaptive_course_audit_action']);
+                $samecourse = isset($config['local_adaptive_course_audit_courseid'])
+                    && (int)$config['local_adaptive_course_audit_courseid'] === $courseid;
+                $samekey = isset($config['local_adaptive_course_audit_key'])
+                    && (string)$config['local_adaptive_course_audit_key'] === $key;
+                if (!$isplugin || !$samecourse || !$samekey) {
+                    continue;
+                }
+
+                $manager->delete_tour((int)$record->id);
+            } catch (\Throwable $exception) {
+                debugging('Error deleting adaptive action tour by key: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+            }
+        }
     }
 
     /**

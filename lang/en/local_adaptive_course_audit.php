@@ -46,8 +46,16 @@ $string['reviewtableheading'] = 'What would you like to review?';
 $string['reviewcoltitle'] = 'Scope';
 $string['reviewcoldescription'] = 'What we check';
 $string['reviewcolaction'] = '';
+$string['teachquiz_row_title'] = 'Quiz: {$a}';
+$string['teachquiz_row_description'] = 'Show me how to make this quiz more adaptive (behaviour, feedback, practice loops).';
+$string['teachquiz_behaviour_button'] = 'Adaptive behaviour';
+$string['teachquiz_feedback_button'] = 'Feedback + attempts';
+$string['teachquiz_reviewoptions_button'] = 'Review options';
+$string['teachquiz_grading_button'] = 'Grading';
+$string['teachquiz_timingsecurity_button'] = 'Timing + security';
 $string['touraction_add_quiz'] = 'Add a quiz here';
 $string['touraction_edit_quiz_settings'] = 'Edit "{$a}" settings';
+$string['startteacherror'] = 'Unable to start the teaching tour right now. Please try again later.';
 $string['actiontourname'] = 'Guided help: {$a->action}';
 $string['actiontourdescription'] = 'Short steps to finish this action in {$a->course}.';
 $string['actiontour_loop_quiz_unlock_followups_addquiz_step_name_title'] = 'Name the quiz';
@@ -125,6 +133,20 @@ $string['actiontour_quizfeedback_step_overallfeedback_title'] = 'Add overall fee
 $string['actiontour_quizfeedback_step_overallfeedback_body'] = '<p>Use <strong>Overall feedback</strong> bands to give different guidance based on score.</p><p><strong>Make it actionable:</strong> include links to the next activity (remedial vs advanced).</p>';
 $string['actiontour_quizfeedback_step_attempts_title'] = 'Enable practice loops';
 $string['actiontour_quizfeedback_step_attempts_body'] = '<p>Set <strong>Attempts allowed</strong> to more than one if you want learners to retry after following a remedial path.</p><p>This turns the quiz into a practice loop with feedback.</p>';
+
+// Quiz review options (what learners see, when).
+$string['actiontour_quizreviewoptions_step_reviewoptions_title'] = 'Tune the review options';
+$string['actiontour_quizreviewoptions_step_reviewoptions_body'] = '<p>Open <strong>Review options</strong> and decide what learners can see <em>during</em>, <em>immediately after</em>, and <em>later</em>.</p><p><strong>Tip:</strong> show the right amount of information at the right time (e.g. overall feedback, which answers were correct, and general feedback).</p>';
+
+// Quiz grading (how attempts are graded / course grade impact).
+$string['actiontour_quizgrading_step_grade_title'] = 'Check the grading setup';
+$string['actiontour_quizgrading_step_grade_body'] = '<p>Under <strong>Grade</strong>, choose how multiple attempts should be graded (highest/average/first/last) and ensure the maximum grade makes sense.</p><p><strong>Outcome:</strong> the quiz score fits your intended learning path and branching conditions.</p>';
+
+// Quiz timing and security (access rules).
+$string['actiontour_quiztimingsecurity_step_timing_title'] = 'Set timing and availability';
+$string['actiontour_quiztimingsecurity_step_timing_body'] = '<p>Use <strong>Timing</strong> to control availability (open/close) and, if needed, add a time limit.</p><p><strong>Tip:</strong> align timing with your course rhythm so learners can plan.</p>';
+$string['actiontour_quiztimingsecurity_step_security_title'] = 'Review access restrictions';
+$string['actiontour_quiztimingsecurity_step_security_body'] = '<p>In <strong>Security</strong>, decide whether additional restrictions are needed (e.g. password, subnet, browser security).</p><p><strong>Tip:</strong> keep it simple unless you have a clear exam scenario.</p>';
 
 // Diagnostic checkpoint rule strings.
 $string['rule_loop_diagnostic_checkpoint_name'] = 'Diagnostic checkpoint';

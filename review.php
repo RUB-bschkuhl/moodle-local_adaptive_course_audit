@@ -23,6 +23,8 @@ require_once(__DIR__ . '/../../config.php');
 $courseid = required_param('courseid', PARAM_INT);
 $action = optional_param('action', '', PARAM_ALPHANUMEXT);
 $sectionid = optional_param('sectionid', 0, PARAM_INT);
+$cmid = optional_param('cmid', 0, PARAM_INT);
+$teach = optional_param('teach', '', PARAM_ALPHANUMEXT);
 $course = get_course($courseid);
 require_login($course);
 
@@ -68,6 +70,29 @@ if ($action === 'startreview') {
     } catch (Throwable $exception) {
         debugging('Error in course audit: ' . $exception->getMessage(), DEBUG_DEVELOPER);
         redirect($url, get_string('startreviewerror', 'local_adaptive_course_audit'), 0, \core\output\notification::NOTIFY_ERROR);
+    }
+}
+
+if ($action === 'startteach') {
+    require_sesskey();
+
+    try {
+        $teachresult = review_service::start_teach_tour((int)$course->id, (int)$cmid, (string)$teach);
+        if (!empty($teachresult['status']) && !empty($teachresult['redirect']) && $teachresult['redirect'] instanceof moodle_url) {
+            redirect($teachresult['redirect']);
+        }
+
+        $failuremessage = !empty($teachresult['message'])
+            ? (string)$teachresult['message']
+            : get_string('startteacherror', 'local_adaptive_course_audit');
+
+        redirect($url, $failuremessage, 0, \core\output\notification::NOTIFY_ERROR);
+    } catch (moodle_exception $exception) {
+        debugging('Error in adaptive teaching tour: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+        redirect($url, $exception->getMessage(), 0, \core\output\notification::NOTIFY_ERROR);
+    } catch (Throwable $exception) {
+        debugging('Error in adaptive teaching tour: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+        redirect($url, get_string('startteacherror', 'local_adaptive_course_audit'), 0, \core\output\notification::NOTIFY_ERROR);
     }
 }
 
@@ -196,8 +221,12 @@ $rows[] = html_writer::tag(
 
 $sectionrows = [];
 $sectioninfoall = [];
+$sectionscm = [];
+$modinfo = null;
 try {
-    $sectioninfoall = get_fast_modinfo($course->id)->get_section_info_all();
+    $modinfo = get_fast_modinfo($course->id);
+    $sectioninfoall = $modinfo->get_section_info_all();
+    $sectionscm = $modinfo->get_sections();
 } catch (Throwable $exception) {
     debugging('Error loading course sections for adaptive audit: ' . $exception->getMessage(), DEBUG_DEVELOPER);
 }
@@ -249,6 +278,105 @@ if (!empty($sectioninfoall)) {
                 html_writer::tag('td', s($sectiondescription)) .
                 html_writer::tag('td', $actioncell, ['class' => 'local-adaptive-course-audit-actions'])
         );
+
+        // Teaching rows: quizzes in this section (show how to enable adaptive features).
+        $cmids = $sectionscm[$sectioninfo->section] ?? [];
+        if (!empty($modinfo) && !empty($cmids)) {
+            foreach ($cmids as $cmid) {
+                try {
+                    $cm = $modinfo->get_cm($cmid);
+                } catch (Throwable $exception) {
+                    debugging('Error resolving section module for adaptive audit review page: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+                    continue;
+                }
+
+                if (empty($cm) || (string)$cm->modname !== 'quiz') {
+                    continue;
+                }
+                if (empty($cm->uservisible) || !empty($cm->deletioninprogress)) {
+                    continue;
+                }
+
+                $quizname = (string)$cm->name;
+                $titlecell = ' -- ' . get_string('teachquiz_row_title', 'local_adaptive_course_audit', $quizname);
+                $descriptioncell = get_string('teachquiz_row_description', 'local_adaptive_course_audit');
+
+                if ($hasmanagecap) {
+                    $teachbaseurl = new moodle_url('/local/adaptive_course_audit/review.php', [
+                        'courseid' => $course->id,
+                        'action' => 'startteach',
+                        'cmid' => (int)$cm->id,
+                        'sesskey' => sesskey(),
+                    ]);
+
+                    $behavioururl = new moodle_url($teachbaseurl, ['teach' => 'quizbehaviour']);
+                    $feedbackurl = new moodle_url($teachbaseurl, ['teach' => 'quizfeedback']);
+                    $reviewoptionsurl = new moodle_url($teachbaseurl, ['teach' => 'quizreviewoptions']);
+                    $gradingurl = new moodle_url($teachbaseurl, ['teach' => 'quizgrading']);
+                    $timingsecurityurl = new moodle_url($teachbaseurl, ['teach' => 'quiztimingsecurity']);
+
+                    $actionbuttons = [];
+                    $actionbuttons[] = html_writer::link(
+                        $behavioururl,
+                        s(get_string('teachquiz_behaviour_button', 'local_adaptive_course_audit')),
+                        [
+                            'class' => 'btn btn-secondary btn-sm local-adaptive-course-audit-teach-button',
+                            'title' => get_string('teachquiz_behaviour_button', 'local_adaptive_course_audit'),
+                        ]
+                    );
+                    $actionbuttons[] = html_writer::link(
+                        $feedbackurl,
+                        s(get_string('teachquiz_feedback_button', 'local_adaptive_course_audit')),
+                        [
+                            'class' => 'btn btn-secondary btn-sm local-adaptive-course-audit-teach-button',
+                            'title' => get_string('teachquiz_feedback_button', 'local_adaptive_course_audit'),
+                        ]
+                    );
+                    $actionbuttons[] = html_writer::link(
+                        $reviewoptionsurl,
+                        s(get_string('teachquiz_reviewoptions_button', 'local_adaptive_course_audit')),
+                        [
+                            'class' => 'btn btn-secondary btn-sm local-adaptive-course-audit-teach-button',
+                            'title' => get_string('teachquiz_reviewoptions_button', 'local_adaptive_course_audit'),
+                        ]
+                    );
+                    $actionbuttons[] = html_writer::link(
+                        $gradingurl,
+                        s(get_string('teachquiz_grading_button', 'local_adaptive_course_audit')),
+                        [
+                            'class' => 'btn btn-secondary btn-sm local-adaptive-course-audit-teach-button',
+                            'title' => get_string('teachquiz_grading_button', 'local_adaptive_course_audit'),
+                        ]
+                    );
+                    $actionbuttons[] = html_writer::link(
+                        $timingsecurityurl,
+                        s(get_string('teachquiz_timingsecurity_button', 'local_adaptive_course_audit')),
+                        [
+                            'class' => 'btn btn-secondary btn-sm local-adaptive-course-audit-teach-button',
+                            'title' => get_string('teachquiz_timingsecurity_button', 'local_adaptive_course_audit'),
+                        ]
+                    );
+
+                    $actioncell = html_writer::div(
+                        implode('', $actionbuttons),
+                        'local-adaptive-course-audit-teach-actions'
+                    );
+                } else {
+                    $actioncell = $OUTPUT->notification(
+                        get_string('startreviewpermission', 'local_adaptive_course_audit'),
+                        \core\output\notification::NOTIFY_INFO
+                    );
+                }
+
+                $sectionrows[] = html_writer::tag(
+                    'tr',
+                    html_writer::tag('td', s($titlecell), ['class' => 'local-adaptive-course-audit-module-title']) .
+                        html_writer::tag('td', s($descriptioncell)) .
+                        html_writer::tag('td', $actioncell, ['class' => 'local-adaptive-course-audit-actions']),
+                    ['class' => 'local-adaptive-course-audit-module-row']
+                );
+            }
+        }
     }
 }
 

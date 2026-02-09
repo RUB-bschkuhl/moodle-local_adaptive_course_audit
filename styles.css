@@ -65,6 +65,27 @@
     margin: 6px 0 0 18px;
 }
 
+/* Review table module rows (teach-me buttons). */
+.local-adaptive-course-audit-table .local-adaptive-course-audit-module-row td {
+    background: rgba(108, 117, 125, 0.04);
+}
+
+.local-adaptive-course-audit-table .local-adaptive-course-audit-module-title {
+    padding-left: 1.25rem;
+    color: rgba(33, 37, 41, 0.85);
+    font-size: 0.95em;
+}
+
+.local-adaptive-course-audit-table .local-adaptive-course-audit-teach-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}
+
+.local-adaptive-course-audit-table .local-adaptive-course-audit-teach-button {
+    white-space: nowrap;
+}
+
 
 /* Adaptive course audit tour step formatting */
 [data-flexitour="container"] .local-aca-tour-step-content p {

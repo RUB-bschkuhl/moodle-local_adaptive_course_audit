@@ -33,6 +33,92 @@ use tool_usertours\tour as usertour;
 final class observer {
 
     /**
+     * Queue deletion for all plugin-owned action/sub tours belonging to the same course as the main tour.
+     *
+     * Action tours are linked via configdata:
+     * - local_adaptive_course_audit_action = 1
+     * - local_adaptive_course_audit_courseid = <courseid>
+     *
+     * @param int $maintourid The main tour id which just completed.
+     * @return void
+     */
+    private static function queue_related_subtour_deletions(int $maintourid): void {
+        global $DB;
+
+        $courseid = 0;
+        try {
+            $mapping = $DB->get_record(
+                'local_adaptive_course_tour',
+                ['tourid' => $maintourid],
+                'courseid',
+                IGNORE_MISSING
+            );
+            if (!empty($mapping) && !empty($mapping->courseid)) {
+                $courseid = (int)$mapping->courseid;
+            }
+        } catch (\Throwable $exception) {
+            debugging('Error resolving course mapping for adaptive main tour: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+            return;
+        }
+
+        if ($courseid <= 0) {
+            return;
+        }
+
+        $records = [];
+        try {
+            $records = $DB->get_records_sql(
+                'SELECT id, configdata FROM {tool_usertours_tours} WHERE configdata LIKE ?',
+                ['%"local_adaptive_course_audit_action"%']
+            );
+        } catch (\Throwable $exception) {
+            debugging('Error fetching adaptive action tours for subtour cleanup: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+            return;
+        }
+
+        if (empty($records)) {
+            return;
+        }
+
+        $seen = [];
+        foreach ($records as $record) {
+            $tourid = (int)($record->id ?? 0);
+            if ($tourid <= 0 || $tourid === $maintourid) {
+                continue;
+            }
+            if (isset($seen[$tourid])) {
+                continue;
+            }
+
+            $config = null;
+            if (!empty($record->configdata)) {
+                $config = json_decode((string)$record->configdata, true);
+            }
+            if (!is_array($config) || empty($config['local_adaptive_course_audit_action'])) {
+                continue;
+            }
+            if (empty($config['local_adaptive_course_audit_courseid'])
+                || (int)$config['local_adaptive_course_audit_courseid'] !== $courseid) {
+                continue;
+            }
+
+            $seen[$tourid] = true;
+
+            $task = new delete_tour();
+            $task->set_custom_data((object)[
+                'tourid' => $tourid,
+            ]);
+            $task->set_component('local_adaptive_course_audit');
+
+            try {
+                task_manager::queue_adhoc_task($task);
+            } catch (\Throwable $exception) {
+                debugging('Error queuing adaptive action tour deletion: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+            }
+        }
+    }
+
+    /**
      * Triggered when a user tour ends (completed or exited early).
      *
      * Behaviour depends on whether this is the main tour (stored in our mapping table)
@@ -136,6 +222,10 @@ final class observer {
 
         // Sub tours: always delete only the sub tour; Main tours: delete only when completed.
         if ($issubtour || ($ismain && $completed)) {
+            if ($ismain && $completed) {
+                self::queue_related_subtour_deletions($tourid);
+            }
+
             $task = new delete_tour();
             $task->set_custom_data((object)[
                 'tourid' => $tourid,
