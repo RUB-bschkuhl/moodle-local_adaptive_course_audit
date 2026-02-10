@@ -134,11 +134,11 @@ try {
 
     $materialfiles = [
         [
-            'filename' => 'Leitfaden_adaptiveLehre_2025.pdf',
+            'filename' => 'Leitfaden_Adaptive_Lehre.pdf',
             'label' => get_string('reviewcoursematerial_leitfaden', 'local_adaptive_course_audit'),
         ],
         [
-            'filename' => 'MIau_AdaptiveLehre_LEHRELADEN_final.pdf',
+            'filename' => 'Adaptive_Kursgestaltung_in_Moodle.pdf',
             'label' => get_string('reviewcoursematerial_miau', 'local_adaptive_course_audit'),
         ],
     ];
@@ -272,9 +272,16 @@ if (!empty($sectioninfoall)) {
             );
         }
 
+        $sectiontitle = get_string('reviewtypesection', 'local_adaptive_course_audit', $sectionname);
+        $sectiontitlecell = html_writer::div(
+            html_writer::span('↳', 'local-adaptive-course-audit-tree-marker', ['aria-hidden' => 'true']) .
+                html_writer::span(s($sectiontitle), 'local-adaptive-course-audit-tree-label'),
+            'local-adaptive-course-audit-tree-item local-adaptive-course-audit-tree-item--depth-1'
+        );
+
         $sectionrows[] = html_writer::tag(
             'tr',
-            html_writer::tag('td', ' - ' . get_string('reviewtypesection', 'local_adaptive_course_audit', $sectionname)) .
+            html_writer::tag('td', $sectiontitlecell, ['class' => 'local-adaptive-course-audit-tree-cell']) .
                 html_writer::tag('td', s($sectiondescription)) .
                 html_writer::tag('td', $actioncell, ['class' => 'local-adaptive-course-audit-actions'])
         );
@@ -298,7 +305,12 @@ if (!empty($sectioninfoall)) {
                 }
 
                 $quizname = (string)$cm->name;
-                $titlecell = ' -- ' . get_string('teachquiz_row_title', 'local_adaptive_course_audit', $quizname);
+                $moduletitle = get_string('teachquiz_row_title', 'local_adaptive_course_audit', $quizname);
+                $titlecell = html_writer::div(
+                    html_writer::span('↳', 'local-adaptive-course-audit-tree-marker', ['aria-hidden' => 'true']) .
+                        html_writer::span(s($moduletitle), 'local-adaptive-course-audit-tree-label'),
+                    'local-adaptive-course-audit-tree-item local-adaptive-course-audit-tree-item--depth-2'
+                );
                 $descriptioncell = get_string('teachquiz_row_description', 'local_adaptive_course_audit');
 
                 if ($hasmanagecap) {
@@ -370,7 +382,9 @@ if (!empty($sectioninfoall)) {
 
                 $sectionrows[] = html_writer::tag(
                     'tr',
-                    html_writer::tag('td', s($titlecell), ['class' => 'local-adaptive-course-audit-module-title']) .
+                    html_writer::tag('td', $titlecell, [
+                        'class' => 'local-adaptive-course-audit-module-title local-adaptive-course-audit-tree-cell',
+                    ]) .
                         html_writer::tag('td', s($descriptioncell)) .
                         html_writer::tag('td', $actioncell, ['class' => 'local-adaptive-course-audit-actions']),
                     ['class' => 'local-adaptive-course-audit-module-row']

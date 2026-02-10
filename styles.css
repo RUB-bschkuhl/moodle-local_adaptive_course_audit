@@ -70,8 +70,27 @@
     background: rgba(108, 117, 125, 0.04);
 }
 
+.local-adaptive-course-audit-table .local-adaptive-course-audit-tree-item {
+    display: flex;
+    align-items: baseline;
+    gap: 0.35rem;
+}
+
+.local-adaptive-course-audit-table .local-adaptive-course-audit-tree-marker {
+    flex: 0 0 auto;
+    color: rgba(33, 37, 41, 0.45);
+    line-height: 1;
+}
+
+.local-adaptive-course-audit-table .local-adaptive-course-audit-tree-item--depth-1 {
+    padding-left: 0.75rem;
+}
+
+.local-adaptive-course-audit-table .local-adaptive-course-audit-tree-item--depth-2 {
+    padding-left: 2rem;
+}
+
 .local-adaptive-course-audit-table .local-adaptive-course-audit-module-title {
-    padding-left: 1.25rem;
     color: rgba(33, 37, 41, 0.85);
     font-size: 0.95em;
 }
