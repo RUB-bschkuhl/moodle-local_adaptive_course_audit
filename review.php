@@ -96,6 +96,32 @@ if ($action === 'startteach') {
     }
 }
 
+if ($action === 'startscenario') {
+    require_sesskey();
+    $scenario = required_param('scenario', PARAM_INT);
+
+    try {
+        $scenarioresult = review_service::start_scenario_tour((int)$course->id, $scenario);
+        if (!empty($scenarioresult['status'])) {
+            redirect(
+                new moodle_url('/course/view.php', ['id' => $course->id])
+            );
+        }
+
+        $failuremessage = !empty($scenarioresult['message'])
+            ? (string)$scenarioresult['message']
+            : get_string('startscenarioerror', 'local_adaptive_course_audit');
+
+        redirect($url, $failuremessage, 0, \core\output\notification::NOTIFY_ERROR);
+    } catch (moodle_exception $exception) {
+        debugging('Error in scenario tour: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+        redirect($url, $exception->getMessage(), 0, \core\output\notification::NOTIFY_ERROR);
+    } catch (Throwable $exception) {
+        debugging('Error in scenario tour: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+        redirect($url, get_string('startscenarioerror', 'local_adaptive_course_audit'), 0, \core\output\notification::NOTIFY_ERROR);
+    }
+}
+
 $intro = '';
 $introimage = '';
 $loopsummary = '';
@@ -427,5 +453,37 @@ if (!empty($materialsblock)) {
 if (!empty($loopsummary)) {
     echo html_writer::div(s($loopsummary), 'local-adaptive-course-audit-loop-summary');
 }
+
+// Scenario tour buttons.
+if ($hasmanagecap) {
+    $scenarioheading = get_string('scenario_heading', 'local_adaptive_course_audit');
+    $scenariodescription = get_string('scenario_description', 'local_adaptive_course_audit');
+
+    $scenariobuttons = [];
+    for ($i = 1; $i <= 3; $i++) {
+        $scenariourl = new moodle_url('/local/adaptive_course_audit/review.php', [
+            'courseid' => $course->id,
+            'action' => 'startscenario',
+            'scenario' => $i,
+            'sesskey' => sesskey(),
+        ]);
+        $scenariobuttons[] = html_writer::link(
+            $scenariourl,
+            s(get_string("scenario_{$i}_button", 'local_adaptive_course_audit')),
+            [
+                'class' => 'btn btn-outline-primary local-adaptive-course-audit-scenario-button',
+                'title' => get_string("scenario_{$i}_title", 'local_adaptive_course_audit'),
+            ]
+        );
+    }
+
+    echo html_writer::div(
+        html_writer::tag('h3', s($scenarioheading)) .
+            html_writer::tag('p', s($scenariodescription)) .
+            html_writer::div(implode('', $scenariobuttons), 'local-adaptive-course-audit-scenario-buttons'),
+        'local-adaptive-course-audit-scenario-section'
+    );
+}
+
 echo html_writer::div($table, 'local-adaptive-course-audit-table-wrapper');
 echo $OUTPUT->footer();

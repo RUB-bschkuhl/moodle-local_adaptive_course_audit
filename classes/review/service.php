@@ -762,6 +762,121 @@ final class service {
         }
     }
 
+    /** @var int Scenario tour: minimalist (individual parts). */
+    private const SCENARIO_MINIMALIST = 1;
+    /** @var int Scenario tour: sequential (topics build on each other). */
+    private const SCENARIO_SEQUENTIAL = 2;
+    /** @var int Scenario tour: compass model (free topic order). */
+    private const SCENARIO_COMPASS = 3;
+
+    /**
+     * Start a scenario tour that guides the instructor through adaptive course design.
+     *
+     * @param int $courseid
+     * @param int $scenario Scenario identifier (1, 2 or 3).
+     * @return array Array with status and optional message.
+     */
+    public static function start_scenario_tour(int $courseid, int $scenario): array {
+        global $DB;
+
+        $allowedscenarios = [self::SCENARIO_MINIMALIST, self::SCENARIO_SEQUENTIAL, self::SCENARIO_COMPASS];
+        if (!in_array($scenario, $allowedscenarios, true)) {
+            return [
+                'status' => false,
+                'message' => get_string('startscenarioerror', 'local_adaptive_course_audit'),
+            ];
+        }
+
+        $course = get_course($courseid);
+        $context = context_course::instance($course->id);
+        if (!$context) {
+            throw new moodle_exception('invalidcourseid');
+        }
+
+        require_capability('moodle/course:manageactivities', $context);
+
+        $manager = new tour_manager();
+        self::delete_existing_tour((int)$course->id, $manager);
+        self::delete_existing_action_tours((int)$course->id);
+
+        $scenariotitle = get_string("scenario_{$scenario}_title", 'local_adaptive_course_audit');
+        $tourname = get_string('scenario_tourname', 'local_adaptive_course_audit', $scenariotitle);
+        $tourdescription = get_string('scenario_tourdescription', 'local_adaptive_course_audit');
+        $pathmatch = "/course/view.php?id={$course->id}";
+
+        $tourconfig = [
+            'displaystepnumbers' => true,
+            'showtourwhen' => tour::SHOW_TOUR_UNTIL_COMPLETE,
+            'backdrop' => true,
+            'reflex' => false,
+            'local_adaptive_course_audit_scenario' => $scenario,
+        ];
+
+        try {
+            $tour = $manager->create_tour($tourname, $tourdescription, $pathmatch, $tourconfig);
+        } catch (\Throwable $exception) {
+            debugging('Error creating scenario tour: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+            return [
+                'status' => false,
+                'message' => get_string('startscenarioerror', 'local_adaptive_course_audit'),
+            ];
+        }
+
+        self::store_tour_mapping((int)$course->id, (int)$tour->get_id());
+
+        try {
+            $steps = self::build_scenario_steps($scenario);
+            foreach ($steps as $step) {
+                $manager->add_step(
+                    (string)$step['title'],
+                    (string)$step['content'],
+                    (string)$step['targettype'],
+                    (string)$step['targetvalue'],
+                    (array)$step['config']
+                );
+            }
+        } catch (\Throwable $exception) {
+            debugging('Error adding scenario tour steps: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+        }
+
+        try {
+            $manager->reset_tour_for_all_users((int)$tour->get_id());
+        } catch (\Throwable $exception) {
+            debugging('Error resetting scenario tour: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+        }
+
+        return ['status' => true];
+    }
+
+    /**
+     * Build tour steps for a scenario path.
+     *
+     * @param int $scenario
+     * @return array[]
+     */
+    private static function build_scenario_steps(int $scenario): array {
+        $commonconfig = [
+            'placement' => 'right',
+            'orphan' => true,
+            'backdrop' => true,
+        ];
+
+        $stepcount = 5;
+        $steps = [];
+
+        for ($i = 1; $i <= $stepcount; $i++) {
+            $steps[] = [
+                'title' => get_string("scenario_{$scenario}_step{$i}_title", 'local_adaptive_course_audit'),
+                'content' => get_string("scenario_{$scenario}_step{$i}_content", 'local_adaptive_course_audit'),
+                'targettype' => (string)target::TARGET_UNATTACHED,
+                'targetvalue' => '',
+                'config' => $commonconfig,
+            ];
+        }
+
+        return $steps;
+    }
+
     /**
      * Remove any adaptive action tours for the given course.
      *
