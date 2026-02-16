@@ -68,8 +68,24 @@ function local_adaptive_course_audit_extend_navigation_course(
     }
 
     $iscourseview = strpos((string)$PAGE->pagetype, 'course-view') === 0;
+    $ismodedit = (strpos((string)$PAGE->url->get_path(), '/course/modedit.php') !== false);
+    $acatourid = optional_param('startacatour', 0, PARAM_INT);
+    $shouldlaunch = $acatourid > 0 && ($iscourseview || $ismodedit);
 
-    if ($hastour && $iscourseview) {
+    // Load the JS tour launcher when the URL parameter is present.
+    if ($shouldlaunch) {
+        try {
+            $PAGE->requires->js_call_amd(
+                'local_adaptive_course_audit/tour_launcher',
+                'init'
+            );
+        } catch (Throwable $exception) {
+            debugging('Error loading adaptive course audit tour launcher: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+        }
+    }
+
+    // Load CSS and sprites when a tour is expected (existing DB mapping or explicit launch).
+    if (($hastour && $iscourseview) || $shouldlaunch) {
         try {
             $PAGE->requires->css(new moodle_url('/local/adaptive_course_audit/styles.css'));
             $PAGE->requires->js_call_amd(

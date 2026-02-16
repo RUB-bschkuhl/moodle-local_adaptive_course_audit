@@ -178,7 +178,9 @@ final class service {
         $coursename = format_string($course->fullname, true, ['context' => $context]);
         $tourname = get_string('tourname', 'local_adaptive_course_audit', $course->shortname);
         $tourdescription = get_string('tourdescription', 'local_adaptive_course_audit', $coursename);
-        $pathmatch = "/course/view.php?id={$course->id}";
+        // Use a non-matching pathmatch so the normal Moodle tour bootstrap
+        // does not pick this up; the tour is started via JS tour_launcher instead.
+        $pathmatch = '/__aca_noop__';
 
         $tourconfig = [
             'displaystepnumbers' => true,
@@ -197,14 +199,16 @@ final class service {
         try {
             $sanitisedsectionid = ($sectionid !== null && $sectionid > 0) ? (int)$sectionid : null;
             $results = self::run_loop_checks((int)$course->id, $sanitisedsectionid);
-            self::add_loop_results_as_steps($manager, $results);
-            self::create_action_tours($course, $results);
+            // Create action tours first so their IDs can be injected into step action URLs.
+            $actiontourmap = self::create_action_tours($course, $results);
+            self::add_loop_results_as_steps($manager, $results, $actiontourmap);
         } catch (\Throwable $exception) {
             debugging('Error running adaptive course audit loops: ' . $exception->getMessage(), DEBUG_DEVELOPER);
         }
 
         return [
             'status' => true,
+            'tourid' => (int)$tour->get_id(),
         ];
     }
 
@@ -299,7 +303,8 @@ final class service {
         if ($teachkey === self::TEACH_KEY_QUIZ_TIMING_SECURITY) {
             $editurl->set_anchor('id_timinghdr');
         }
-        $pathmatch = '/course/modedit.php%update=' . (int)$cmid . '%';
+        // Use a non-matching pathmatch; the tour is started via JS tour_launcher.
+        $pathmatch = '/__aca_noop__';
 
         $tourkey = 'teach_' . $teachkey . '_' . (int)$cmid;
 
@@ -362,6 +367,7 @@ final class service {
         return [
             'status' => true,
             'redirect' => $editurl,
+            'tourid' => (int)$tour->get_id(),
         ];
     }
 
@@ -647,9 +653,10 @@ final class service {
      *
      * @param tour_manager $manager
      * @param array $results
+     * @param array $actiontourmap Map of action tour keys to tour IDs, used to inject startacatour URL params.
      * @return void
      */
-    private static function add_loop_results_as_steps(tour_manager $manager, array $results): void {
+    private static function add_loop_results_as_steps(tour_manager $manager, array $results, array $actiontourmap = []): void {
         foreach ($results as $result) {
             $statusprefix = $result->status ? '[OK] ' : '';
             $headline = $result->headline ?? '';
@@ -716,6 +723,13 @@ final class service {
                     }
 
                     $url = $action['url'];
+                    // Inject the startacatour parameter so the JS tour_launcher
+                    // can start the corresponding action tour on the target page.
+                    if (!empty($action['tour']['key']) && isset($actiontourmap[$action['tour']['key']])) {
+                        if ($url instanceof \moodle_url) {
+                            $url->param('startacatour', $actiontourmap[$action['tour']['key']]);
+                        }
+                    }
                     if ($url instanceof \moodle_url) {
                         $url = $url->out(false);
                     }
@@ -802,7 +816,8 @@ final class service {
         $scenariotitle = get_string("scenario_{$scenario}_title", 'local_adaptive_course_audit');
         $tourname = get_string('scenario_tourname', 'local_adaptive_course_audit', $scenariotitle);
         $tourdescription = get_string('scenario_tourdescription', 'local_adaptive_course_audit');
-        $pathmatch = "/course/view.php?id={$course->id}";
+        // Use a non-matching pathmatch; the tour is started via JS tour_launcher.
+        $pathmatch = '/__aca_noop__';
 
         $tourconfig = [
             'displaystepnumbers' => true,
@@ -845,7 +860,10 @@ final class service {
             debugging('Error resetting scenario tour: ' . $exception->getMessage(), DEBUG_DEVELOPER);
         }
 
-        return ['status' => true];
+        return [
+            'status' => true,
+            'tourid' => (int)$tour->get_id(),
+        ];
     }
 
     /**
@@ -927,11 +945,12 @@ final class service {
      *
      * @param object $course
      * @param array $results
-     * @return void
+     * @return array Map of action tour keys to tour IDs.
      */
-    private static function create_action_tours($course, array $results): void {
+    private static function create_action_tours($course, array $results): array {
         $coursecontext = context_course::instance($course->id);
         $courseshortname = format_string($course->shortname, true, ['context' => $coursecontext]);
+        $actiontourmap = [];
 
         foreach ($results as $result) {
             if (empty($result->actions) || !is_array($result->actions)) {
@@ -947,9 +966,11 @@ final class service {
                     debugging('Action tour missing pathmatch, skipping tour creation', DEBUG_DEVELOPER);
                     continue;
                 }
-                $pathmatch = $action['tour']['pathmatch'];
 
-                $tourkey = $action['tour']['key'] ?? sha1($pathmatch);
+                // Use a non-matching pathmatch; the tour is started via JS tour_launcher.
+                $pathmatch = '/__aca_noop__';
+
+                $tourkey = $action['tour']['key'] ?? sha1($action['tour']['pathmatch']);
                 $actionlabel = !empty($action['label'])
                     ? (string)$action['label']
                     : get_string('startreview', 'local_adaptive_course_audit');
@@ -978,7 +999,8 @@ final class service {
 
                 try {
                     $tour = $manager->create_tour($tourname, $tourdescription, $pathmatch, $tourconfig, false);
-                    debugging('Created action tour ID: ' . $tour->get_id() . ' with pathmatch: ' . $tour->get_pathmatch(), DEBUG_DEVELOPER);
+                    $actiontourmap[$tourkey] = (int)$tour->get_id();
+                    debugging('Created action tour ID: ' . $tour->get_id(), DEBUG_DEVELOPER);
                 } catch (\Throwable $exception) {
                     debugging('Error creating adaptive action tour: ' . $exception->getMessage(), DEBUG_DEVELOPER);
                     continue;
@@ -1013,6 +1035,8 @@ final class service {
                 }
             }
         }
+
+        return $actiontourmap;
     }
 
 }

@@ -54,8 +54,12 @@ if ($action === 'startreview') {
     try {
         $reviewresult = review_service::start_review((int)$course->id, $sectionid > 0 ? $sectionid : null);
         if (!empty($reviewresult['status'])) {
+            $redirectparams = ['id' => $course->id];
+            if (!empty($reviewresult['tourid'])) {
+                $redirectparams['startacatour'] = (int)$reviewresult['tourid'];
+            }
             redirect(
-                new moodle_url('/course/view.php', ['id' => $course->id])
+                new moodle_url('/course/view.php', $redirectparams)
             );
         }
 
@@ -79,7 +83,11 @@ if ($action === 'startteach') {
     try {
         $teachresult = review_service::start_teach_tour((int)$course->id, (int)$cmid, (string)$teach);
         if (!empty($teachresult['status']) && !empty($teachresult['redirect']) && $teachresult['redirect'] instanceof moodle_url) {
-            redirect($teachresult['redirect']);
+            $teachredirecturl = $teachresult['redirect'];
+            if (!empty($teachresult['tourid'])) {
+                $teachredirecturl->param('startacatour', (int)$teachresult['tourid']);
+            }
+            redirect($teachredirecturl);
         }
 
         $failuremessage = !empty($teachresult['message'])
@@ -103,8 +111,12 @@ if ($action === 'startscenario') {
     try {
         $scenarioresult = review_service::start_scenario_tour((int)$course->id, $scenario);
         if (!empty($scenarioresult['status'])) {
+            $redirectparams = ['id' => $course->id];
+            if (!empty($scenarioresult['tourid'])) {
+                $redirectparams['startacatour'] = (int)$scenarioresult['tourid'];
+            }
             redirect(
-                new moodle_url('/course/view.php', ['id' => $course->id])
+                new moodle_url('/course/view.php', $redirectparams)
             );
         }
 
