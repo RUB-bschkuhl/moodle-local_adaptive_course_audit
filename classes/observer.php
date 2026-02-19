@@ -20,8 +20,7 @@ namespace local_adaptive_course_audit;
 
 defined('MOODLE_INTERNAL') || die();
 
-use core\task\manager as task_manager;
-use local_adaptive_course_audit\task\delete_tour;
+use local_adaptive_course_audit\tour\manager as tour_manager;
 use tool_usertours\step as usertour_step;
 use tool_usertours\tour as usertour;
 
@@ -30,7 +29,8 @@ use tool_usertours\tour as usertour;
  *
  * @package     local_adaptive_course_audit
  */
-final class observer {
+final class observer
+{
 
     /**
      * Queue deletion for all plugin-owned action/sub tours belonging to the same course as the main tour.
@@ -42,7 +42,8 @@ final class observer {
      * @param int $maintourid The main tour id which just completed.
      * @return void
      */
-    private static function queue_related_subtour_deletions(int $maintourid): void {
+    private static function queue_related_subtour_deletions(int $maintourid): void
+    {
         global $DB;
 
         $courseid = 0;
@@ -81,6 +82,7 @@ final class observer {
         }
 
         $seen = [];
+        $manager = new tour_manager();
         foreach ($records as $record) {
             $tourid = (int)($record->id ?? 0);
             if ($tourid <= 0 || $tourid === $maintourid) {
@@ -97,23 +99,18 @@ final class observer {
             if (!is_array($config) || empty($config['local_adaptive_course_audit_action'])) {
                 continue;
             }
-            if (empty($config['local_adaptive_course_audit_courseid'])
-                || (int)$config['local_adaptive_course_audit_courseid'] !== $courseid) {
+            if (
+                empty($config['local_adaptive_course_audit_courseid'])
+                || (int)$config['local_adaptive_course_audit_courseid'] !== $courseid
+            ) {
                 continue;
             }
 
             $seen[$tourid] = true;
-
-            $task = new delete_tour();
-            $task->set_custom_data((object)[
-                'tourid' => $tourid,
-            ]);
-            $task->set_component('local_adaptive_course_audit');
-
             try {
-                task_manager::queue_adhoc_task($task);
+                $manager->delete_tour($tourid);
             } catch (\Throwable $exception) {
-                debugging('Error queuing adaptive action tour deletion: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+                debugging('Error deleting adaptive action tour: ' . $exception->getMessage(), DEBUG_DEVELOPER);
             }
         }
     }
@@ -127,7 +124,8 @@ final class observer {
      * @param \tool_usertours\event\tour_ended $event The event data.
      * @return void
      */
-    public static function tour_ended(\tool_usertours\event\tour_ended $event): void {
+    public static function tour_ended(\tool_usertours\event\tour_ended $event): void
+    {
         global $DB;
 
         $data = $event->get_data();
@@ -181,63 +179,57 @@ final class observer {
 
         $laststepindex = $totalsteps > 0 ? ($totalsteps - 1) : -1;
         $completed = ($laststepindex >= 0) && ($stepindex >= $laststepindex);
-        $endedearly = !$completed;
 
+        // TODO for now just delete tours when they end.
         // Main tours: if ended early, retrigger by bumping majorupdatetime; otherwise delete everything.
-        if ($ismain && $endedearly) {
-            // Remove all steps up to (and including) the current step, except the first step.
-            // This allows a reload to start at the next step (after the intro step).
-            if ($stepindex > 0) {
-                try {
-                    $steps = $DB->get_records(
-                        'tool_usertours_steps',
-                        ['tourid' => $tourid],
-                        'sortorder ASC, id ASC',
-                        'id'
-                    );
-                    $steps = array_values($steps);
+        // if ($ismain && !$completed) {
+        //     // Remove all steps up to (and including) the current step, except the first step.
+        //     // This allows a reload to start at the next step (after the intro step).
+        //     if ($stepindex > 0) {
+        //         try {
+        //             $steps = $DB->get_records(
+        //                 'tool_usertours_steps',
+        //                 ['tourid' => $tourid],
+        //                 'sortorder ASC, id ASC',
+        //                 'id'
+        //             );
+        //             $steps = array_values($steps);
 
-                    // Delete steps 1..$stepindex (inclusive), but never beyond the step list.
-                    $maxindex = min($stepindex, count($steps) - 1);
-                    for ($index = 1; $index <= $maxindex; $index++) {
-                        $stepid = (int)($steps[$index]->id ?? 0);
-                        if ($stepid > 0) {
-                            usertour_step::instance($stepid)->remove();
-                        }
-                    }
-                } catch (\Throwable $exception) {
-                    debugging('Error pruning steps for adaptive main tour: ' . $exception->getMessage(), DEBUG_DEVELOPER);
-                }
-            }
+        //             // Delete steps 1..$stepindex (inclusive), but never beyond the step list.
+        //             $maxindex = min($stepindex, count($steps) - 1);
+        //             for ($index = 1; $index <= $maxindex; $index++) {
+        //                 $stepid = (int)($steps[$index]->id ?? 0);
+        //                 if ($stepid > 0) {
+        //                     usertour_step::instance($stepid)->remove();
+        //                 }
+        //             }
+        //         } catch (\Throwable $exception) {
+        //             debugging('Error pruning steps for adaptive main tour: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+        //         }
+        //     }
 
-            try {
-                $tour = usertour::instance($tourid);
-                $tour->set_config('majorupdatetime', time());
-                $tour->persist();
-            } catch (\Throwable $exception) {
-                debugging('Error updating majorupdatetime for adaptive main tour: ' . $exception->getMessage(), DEBUG_DEVELOPER);
-            }
-            return;
-        }
+        //     try {
+        //         $tour = usertour::instance($tourid);
+        //         $tour->set_config('majorupdatetime', time());
+        //         $tour->persist();
+        //     } catch (\Throwable $exception) {
+        //         debugging('Error updating majorupdatetime for adaptive main tour: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+        //     }
+        //     return;
+        // }
 
         // Sub tours: always delete only the sub tour; Main tours: delete only when completed.
-        if ($issubtour || ($ismain && $completed)) {
-            if ($ismain && $completed) {
-                self::queue_related_subtour_deletions($tourid);
-            }
-
-            $task = new delete_tour();
-            $task->set_custom_data((object)[
-                'tourid' => $tourid,
-            ]);
-            $task->set_component('local_adaptive_course_audit');
-
-            try {
-                task_manager::queue_adhoc_task($task);
-            } catch (\Throwable $exception) {
-                debugging('Error queuing adaptive course audit tour deletion: ' . $exception->getMessage(), DEBUG_DEVELOPER);
-            }
+        // if ($issubtour || ($ismain && $completed)) {
+        // if ($ismain && $completed) {
+        if ($ismain) {
+            self::queue_related_subtour_deletions($tourid);
         }
+        try {
+            $manager = new tour_manager();
+            $manager->delete_tour($tourid);
+        } catch (\Throwable $exception) {
+            debugging('Error deleting adaptive course audit tour: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+        }
+        // }
     }
 }
-

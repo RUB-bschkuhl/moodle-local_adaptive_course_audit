@@ -13,3 +13,5 @@
 Mechanismus erklären bevor auf review geklickt wird
 Nutzer wissen sonst nicht warum sie das review starten wollen wenn nicht irhe frage beantwortet wird.
 Fragen im Dropdown auswählen die beantwortet werden sollen (ist mein quiz gut auf adaptive szenarien eingestelt?)
+
+

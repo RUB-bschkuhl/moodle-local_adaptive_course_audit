@@ -45,15 +45,17 @@ use tool_usertours\tour;
 final class service {
     private const TOUR_TABLE = 'local_adaptive_course_tour';
 
-    /** @var string Teach tour key: quiz behaviour guidance. */
+    /** @var string Teach tour key: combined quiz guided help. */
+    private const TEACH_KEY_QUIZ_GUIDED_HELP = 'quizguidedhelp';
+    /** @var string Teach tour key (legacy): quiz behaviour guidance. */
     private const TEACH_KEY_QUIZ_BEHAVIOUR = 'quizbehaviour';
-    /** @var string Teach tour key: quiz feedback guidance. */
+    /** @var string Teach tour key (legacy): quiz feedback guidance. */
     private const TEACH_KEY_QUIZ_FEEDBACK = 'quizfeedback';
-    /** @var string Teach tour key: quiz review options guidance. */
+    /** @var string Teach tour key (legacy): quiz review options guidance. */
     private const TEACH_KEY_QUIZ_REVIEW_OPTIONS = 'quizreviewoptions';
-    /** @var string Teach tour key: quiz grading guidance. */
+    /** @var string Teach tour key (legacy): quiz grading guidance. */
     private const TEACH_KEY_QUIZ_GRADING = 'quizgrading';
-    /** @var string Teach tour key: quiz timing and security guidance. */
+    /** @var string Teach tour key (legacy): quiz timing and security guidance. */
     private const TEACH_KEY_QUIZ_TIMING_SECURITY = 'quiztimingsecurity';
 
  /**
@@ -189,7 +191,15 @@ final class service {
             'reflex' => false,
         ];
 
-        $tour = $manager->create_tour($tourname, $tourdescription, $pathmatch, $tourconfig);
+        $tour = $manager->create_tour(
+            $tourname,
+            $tourdescription,
+            $pathmatch,
+            $tourconfig,
+            true,
+            get_string('tourintro_audit_title', 'local_adaptive_course_audit'),
+            get_string('tourintro_audit_content', 'local_adaptive_course_audit')
+        );
 
         self::store_tour_mapping((int)$course->id, (int)$tour->get_id());
 
@@ -268,6 +278,7 @@ final class service {
         }
 
         $allowedteach = [
+            self::TEACH_KEY_QUIZ_GUIDED_HELP,
             self::TEACH_KEY_QUIZ_BEHAVIOUR,
             self::TEACH_KEY_QUIZ_FEEDBACK,
             self::TEACH_KEY_QUIZ_REVIEW_OPTIONS,
@@ -288,7 +299,7 @@ final class service {
             'sr' => 0,
             'sesskey' => sesskey(),
         ]);
-        if ($teachkey === self::TEACH_KEY_QUIZ_BEHAVIOUR) {
+        if ($teachkey === self::TEACH_KEY_QUIZ_GUIDED_HELP || $teachkey === self::TEACH_KEY_QUIZ_BEHAVIOUR) {
             $editurl->set_anchor('id_interactionhdrcontainer');
         }
         if ($teachkey === self::TEACH_KEY_QUIZ_FEEDBACK) {
@@ -306,12 +317,21 @@ final class service {
         // Use a non-matching pathmatch; the tour is started via JS tour_launcher.
         $pathmatch = '/__aca_noop__';
 
+        // Merge legacy per-topic teach keys into the combined tour.
+        if (in_array($teachkey, [
+            self::TEACH_KEY_QUIZ_BEHAVIOUR,
+            self::TEACH_KEY_QUIZ_FEEDBACK,
+            self::TEACH_KEY_QUIZ_REVIEW_OPTIONS,
+            self::TEACH_KEY_QUIZ_GRADING,
+            self::TEACH_KEY_QUIZ_TIMING_SECURITY,
+        ], true)) {
+            $teachkey = self::TEACH_KEY_QUIZ_GUIDED_HELP;
+        }
+
         $tourkey = 'teach_' . $teachkey . '_' . (int)$cmid;
 
-        $tourname = get_string('actiontourname', 'local_adaptive_course_audit', (object)[
-            'action' => $quizname,
-        ]);
-        $tourdescription = get_string('actiontourdescription', 'local_adaptive_course_audit', (object)[
+        $tourname = get_string('teachtourname', 'local_adaptive_course_audit', $quizname);
+        $tourdescription = get_string('teachtourdescription', 'local_adaptive_course_audit', (object)[
             'course' => format_string($course->shortname, true, ['context' => $context]),
         ]);
 
@@ -334,7 +354,15 @@ final class service {
         self::delete_existing_action_tours((int)$course->id);
 
         try {
-            $tour = $manager->create_tour($tourname, $tourdescription, $pathmatch, $tourconfig, false);
+            $tour = $manager->create_tour(
+                $tourname,
+                $tourdescription,
+                $pathmatch,
+                $tourconfig,
+                true,
+                get_string('tourintro_teach_title', 'local_adaptive_course_audit'),
+                get_string('tourintro_teach_content', 'local_adaptive_course_audit')
+            );
         } catch (\Throwable $exception) {
             debugging('Error creating adaptive teaching tour: ' . $exception->getMessage(), DEBUG_DEVELOPER);
             return [
@@ -385,25 +413,13 @@ final class service {
             'orphan' => true,
         ];
 
-        if ($teachkey === self::TEACH_KEY_QUIZ_BEHAVIOUR) {
+        if ($teachkey === self::TEACH_KEY_QUIZ_GUIDED_HELP) {
             return [
                 [
                     'title' => get_string('actiontour_quizbehaviour_step_behaviour_title', 'local_adaptive_course_audit'),
                     'content' => get_string('actiontour_quizbehaviour_step_behaviour_body', 'local_adaptive_course_audit'),
                     'targettype' => (string)target::TARGET_SELECTOR,
                     'targetvalue' => '#id_preferredbehaviour',
-                    'config' => $commonconfig,
-                ],
-            ];
-        }
-
-        if ($teachkey === self::TEACH_KEY_QUIZ_FEEDBACK) {
-            return [
-                [
-                    'title' => get_string('actiontour_quizfeedback_step_overallfeedback_title', 'local_adaptive_course_audit'),
-                    'content' => get_string('actiontour_quizfeedback_step_overallfeedback_body', 'local_adaptive_course_audit'),
-                    'targettype' => (string)target::TARGET_SELECTOR,
-                    'targetvalue' => '#id_overallfeedbackhdr',
                     'config' => $commonconfig,
                 ],
                 [
@@ -413,47 +429,33 @@ final class service {
                     'targetvalue' => '#id_attempts',
                     'config' => $commonconfig,
                 ],
-            ];
-        }
-
-        if ($teachkey === self::TEACH_KEY_QUIZ_REVIEW_OPTIONS) {
-            return [
-                [
-                    'title' => get_string('actiontour_quizreviewoptions_step_reviewoptions_title', 'local_adaptive_course_audit'),
-                    'content' => get_string('actiontour_quizreviewoptions_step_reviewoptions_body', 'local_adaptive_course_audit'),
-                    'targettype' => (string)target::TARGET_SELECTOR,
-                    'targetvalue' => '#id_reviewoptionshdr',
-                    'config' => $commonconfig,
-                ],
-            ];
-        }
-
-        if ($teachkey === self::TEACH_KEY_QUIZ_GRADING) {
-            return [
                 [
                     'title' => get_string('actiontour_quizgrading_step_grade_title', 'local_adaptive_course_audit'),
                     'content' => get_string('actiontour_quizgrading_step_grade_body', 'local_adaptive_course_audit'),
                     'targettype' => (string)target::TARGET_SELECTOR,
-                    'targetvalue' => '#id_gradehdr',
+                    'targetvalue' => '#id_grademethod',
                     'config' => $commonconfig,
                 ],
-            ];
-        }
-
-        if ($teachkey === self::TEACH_KEY_QUIZ_TIMING_SECURITY) {
-            return [
+                [
+                    'title' => get_string('actiontour_quizreviewoptions_step_reviewoptions_title', 'local_adaptive_course_audit'),
+                    'content' => get_string('actiontour_quizreviewoptions_step_reviewoptions_body', 'local_adaptive_course_audit'),
+                    'targettype' => (string)target::TARGET_SELECTOR,
+                    'targetvalue' => '#id_attemptimmediately',
+                    'config' => $commonconfig,
+                ],
+                [
+                    'title' => get_string('actiontour_quizfeedback_step_overallfeedback_title', 'local_adaptive_course_audit'),
+                    'content' => get_string('actiontour_quizfeedback_step_overallfeedback_body', 'local_adaptive_course_audit'),
+                    'targettype' => (string)target::TARGET_SELECTOR,
+                    // The overall feedback editor is a repeated element; target the first row’s wrapper (fallback included).
+                    'targetvalue' => '#fitem_id_feedbacktext_0, [id^="fitem_id_feedbacktext"]',
+                    'config' => $commonconfig,
+                ],
                 [
                     'title' => get_string('actiontour_quiztimingsecurity_step_timing_title', 'local_adaptive_course_audit'),
                     'content' => get_string('actiontour_quiztimingsecurity_step_timing_body', 'local_adaptive_course_audit'),
                     'targettype' => (string)target::TARGET_SELECTOR,
-                    'targetvalue' => '#id_timinghdr',
-                    'config' => $commonconfig,
-                ],
-                [
-                    'title' => get_string('actiontour_quiztimingsecurity_step_security_title', 'local_adaptive_course_audit'),
-                    'content' => get_string('actiontour_quiztimingsecurity_step_security_body', 'local_adaptive_course_audit'),
-                    'targettype' => (string)target::TARGET_SELECTOR,
-                    'targetvalue' => '#id_securityhdr',
+                    'targetvalue' => '#id_timeopen',
                     'config' => $commonconfig,
                 ],
             ];
@@ -658,12 +660,11 @@ final class service {
      */
     private static function add_loop_results_as_steps(tour_manager $manager, array $results, array $actiontourmap = []): void {
         foreach ($results as $result) {
-            $statusprefix = $result->status ? '[OK] ' : '';
             $headline = $result->headline ?? '';
             if ($headline === '') {
                 $headline = $result->rule_name ?? get_string('reviewcourseheading', 'local_adaptive_course_audit');
             }
-            $title = $statusprefix . $headline;
+            $title = $headline;
 
             $context = null;
             if (!empty($result->course_id)) {
@@ -682,9 +683,6 @@ final class service {
             $contentchunks = [];
             if (!empty($rawmessages)) {
                 $rationale = (string)array_shift($rawmessages);
-                if ($rationale !== '') {
-                    $contentchunks[] = self::format_rationale_block($rationale, $context);
-                }
 
                 if (!empty($rawmessages)) {
                     if (count($rawmessages) === 1) {
@@ -698,6 +696,10 @@ final class service {
                             'class' => 'local-aca-tour-message-list',
                         ]);
                     }
+                }
+
+                if ($rationale !== '') {
+                    $contentchunks[] = self::format_rationale_block($rationale, $context);
                 }
             }
 
@@ -806,6 +808,7 @@ final class service {
         if (!$context) {
             throw new moodle_exception('invalidcourseid');
         }
+        /** @var \context $context */
 
         require_capability('moodle/course:manageactivities', $context);
 
@@ -828,7 +831,15 @@ final class service {
         ];
 
         try {
-            $tour = $manager->create_tour($tourname, $tourdescription, $pathmatch, $tourconfig);
+            $tour = $manager->create_tour(
+                $tourname,
+                $tourdescription,
+                $pathmatch,
+                $tourconfig,
+                true,
+                get_string('tourintro_scenario_title', 'local_adaptive_course_audit'),
+                get_string('tourintro_scenario_content', 'local_adaptive_course_audit')
+            );
         } catch (\Throwable $exception) {
             debugging('Error creating scenario tour: ' . $exception->getMessage(), DEBUG_DEVELOPER);
             return [
@@ -998,7 +1009,15 @@ final class service {
                 debugging('Creating action tour with pathmatch: ' . $pathmatch, DEBUG_DEVELOPER);
 
                 try {
-                    $tour = $manager->create_tour($tourname, $tourdescription, $pathmatch, $tourconfig, false);
+                    $tour = $manager->create_tour(
+                        $tourname,
+                        $tourdescription,
+                        $pathmatch,
+                        $tourconfig,
+                        true,
+                        get_string('tourintro_teach_title', 'local_adaptive_course_audit'),
+                        get_string('tourintro_teach_content', 'local_adaptive_course_audit')
+                    );
                     $actiontourmap[$tourkey] = (int)$tour->get_id();
                     debugging('Created action tour ID: ' . $tour->get_id(), DEBUG_DEVELOPER);
                 } catch (\Throwable $exception) {

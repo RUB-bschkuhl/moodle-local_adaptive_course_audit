@@ -250,9 +250,20 @@ if ($hasmanagecap) {
     );
 }
 
+$adaptivetitle = get_string('reviewtypeadaptive', 'local_adaptive_course_audit');
+$adaptivebadgelabel = get_string('reviewbadge_extensive', 'local_adaptive_course_audit');
+$adaptivetitlecell = html_writer::span(s($adaptivetitle)) . ' ' . html_writer::tag(
+    'span',
+    s($adaptivebadgelabel),
+    [
+        'class' => 'badge badge-secondary ml-2',
+        'title' => $adaptivebadgelabel,
+    ]
+);
+
 $rows[] = html_writer::tag(
     'tr',
-    html_writer::tag('td', get_string('reviewtypeadaptive', 'local_adaptive_course_audit')) .
+    html_writer::tag('td', $adaptivetitlecell) .
         html_writer::tag('td', s($startreviewdescription)) .
         html_writer::tag('td', $actioncell, ['class' => 'local-adaptive-course-audit-actions'])
 );
@@ -359,51 +370,16 @@ if (!empty($sectioninfoall)) {
                         'sesskey' => sesskey(),
                     ]);
 
-                    $behavioururl = new moodle_url($teachbaseurl, ['teach' => 'quizbehaviour']);
-                    $feedbackurl = new moodle_url($teachbaseurl, ['teach' => 'quizfeedback']);
-                    $reviewoptionsurl = new moodle_url($teachbaseurl, ['teach' => 'quizreviewoptions']);
-                    $gradingurl = new moodle_url($teachbaseurl, ['teach' => 'quizgrading']);
-                    $timingsecurityurl = new moodle_url($teachbaseurl, ['teach' => 'quiztimingsecurity']);
+                    $guidedhelpurl = new moodle_url($teachbaseurl, ['teach' => 'quizguidedhelp']);
+                    $guidedhelplabel = get_string('teachquiz_guidedhelp_button', 'local_adaptive_course_audit');
 
                     $actionbuttons = [];
                     $actionbuttons[] = html_writer::link(
-                        $behavioururl,
-                        s(get_string('teachquiz_behaviour_button', 'local_adaptive_course_audit')),
+                        $guidedhelpurl,
+                        s($guidedhelplabel),
                         [
                             'class' => 'btn btn-secondary btn-sm local-adaptive-course-audit-teach-button',
-                            'title' => get_string('teachquiz_behaviour_button', 'local_adaptive_course_audit'),
-                        ]
-                    );
-                    $actionbuttons[] = html_writer::link(
-                        $feedbackurl,
-                        s(get_string('teachquiz_feedback_button', 'local_adaptive_course_audit')),
-                        [
-                            'class' => 'btn btn-secondary btn-sm local-adaptive-course-audit-teach-button',
-                            'title' => get_string('teachquiz_feedback_button', 'local_adaptive_course_audit'),
-                        ]
-                    );
-                    $actionbuttons[] = html_writer::link(
-                        $reviewoptionsurl,
-                        s(get_string('teachquiz_reviewoptions_button', 'local_adaptive_course_audit')),
-                        [
-                            'class' => 'btn btn-secondary btn-sm local-adaptive-course-audit-teach-button',
-                            'title' => get_string('teachquiz_reviewoptions_button', 'local_adaptive_course_audit'),
-                        ]
-                    );
-                    $actionbuttons[] = html_writer::link(
-                        $gradingurl,
-                        s(get_string('teachquiz_grading_button', 'local_adaptive_course_audit')),
-                        [
-                            'class' => 'btn btn-secondary btn-sm local-adaptive-course-audit-teach-button',
-                            'title' => get_string('teachquiz_grading_button', 'local_adaptive_course_audit'),
-                        ]
-                    );
-                    $actionbuttons[] = html_writer::link(
-                        $timingsecurityurl,
-                        s(get_string('teachquiz_timingsecurity_button', 'local_adaptive_course_audit')),
-                        [
-                            'class' => 'btn btn-secondary btn-sm local-adaptive-course-audit-teach-button',
-                            'title' => get_string('teachquiz_timingsecurity_button', 'local_adaptive_course_audit'),
+                            'title' => $guidedhelplabel,
                         ]
                     );
 
@@ -454,11 +430,10 @@ $table = html_writer::tag(
 echo $OUTPUT->header();
 echo $OUTPUT->heading($pageheading);
 echo html_writer::div(
-    html_writer::div(s($intro), 'local-adaptive-course-audit-hero-text') .
+    html_writer::div(s($intro . $startreviewhelp), 'local-adaptive-course-audit-hero-text') .
         ($introimage !== '' ? html_writer::div($introimage, 'local-adaptive-course-audit-hero-image') : ''),
     'local-adaptive-course-audit-hero'
 );
-echo html_writer::div(s($startreviewhelp), 'local-adaptive-course-audit-help');
 if (!empty($materialsblock)) {
     echo $materialsblock;
 }
@@ -469,7 +444,9 @@ if (!empty($loopsummary)) {
 // Scenario tour buttons.
 if ($hasmanagecap) {
     $scenarioheading = get_string('scenario_heading', 'local_adaptive_course_audit');
-    $scenariodescription = get_string('scenario_description', 'local_adaptive_course_audit');
+    $tableheading = get_string('table_heading', 'local_adaptive_course_audit');
+    $scenariodescription = get_string('scenario_description_html', 'local_adaptive_course_audit');
+    $scenariodescriptionhtml = format_text($scenariodescription, FORMAT_HTML, ['context' => $context]);
 
     $scenariobuttons = [];
     for ($i = 1; $i <= 3; $i++) {
@@ -483,7 +460,7 @@ if ($hasmanagecap) {
             $scenariourl,
             s(get_string("scenario_{$i}_button", 'local_adaptive_course_audit')),
             [
-                'class' => 'btn btn-outline-primary local-adaptive-course-audit-scenario-button',
+                'class' => 'btn btn-primary local-adaptive-course-audit-scenario-button',
                 'title' => get_string("scenario_{$i}_title", 'local_adaptive_course_audit'),
             ]
         );
@@ -491,11 +468,12 @@ if ($hasmanagecap) {
 
     echo html_writer::div(
         html_writer::tag('h3', s($scenarioheading)) .
-            html_writer::tag('p', s($scenariodescription)) .
+            html_writer::div($scenariodescriptionhtml, 'local-adaptive-course-audit-scenario-description') .
             html_writer::div(implode('', $scenariobuttons), 'local-adaptive-course-audit-scenario-buttons'),
         'local-adaptive-course-audit-scenario-section'
     );
 }
 
+echo html_writer::tag('h3', s($tableheading));
 echo html_writer::div($table, 'local-adaptive-course-audit-table-wrapper');
 echo $OUTPUT->footer();

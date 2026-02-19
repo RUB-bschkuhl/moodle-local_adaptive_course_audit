@@ -65,7 +65,9 @@ final class manager
      * @param string $description
      * @param string $pathmatch
      * @param array $config
-     * @param bool $addplaceholderstep Whether to prepend the default intro step.
+     * @param bool $addintrostep Whether to prepend an intro step.
+     * @param string|null $introtitle Optional intro step title (HTML is not expected).
+     * @param string|null $introcontent Optional intro step content (HTML allowed).
      * @return tour
      */
     public function create_tour(
@@ -73,7 +75,9 @@ final class manager
         string $description,
         string $pathmatch,
         array $config = [],
-        bool $addplaceholderstep = true
+        bool $addintrostep = true,
+        ?string $introtitle = null,
+        ?string $introcontent = null
     ): tour
     {
         global $USER;
@@ -105,10 +109,17 @@ final class manager
         $tour->persist();
         $this->tour = $tour;
 
-        if ($addplaceholderstep) {
+        if ($addintrostep) {
+            $introtitle = ($introtitle !== null && trim($introtitle) !== '')
+                ? $introtitle
+                : get_string('tourintro_default_title', 'local_adaptive_course_audit');
+            $introcontent = ($introcontent !== null && trim($introcontent) !== '')
+                ? $introcontent
+                : get_string('tourintro_default_content', 'local_adaptive_course_audit');
+
             $this->add_step(
-                get_string('tourplaceholdertitle', 'local_adaptive_course_audit'),
-                get_string('tourplaceholdercontent', 'local_adaptive_course_audit'),
+                $introtitle,
+                $introcontent,
                 (string)target::TARGET_UNATTACHED,
                 '',
                 [
@@ -141,7 +152,9 @@ final class manager
         $step = new step();
         $step->set_tourid($this->tour->get_id());
         $step->set_title($title);
-        $step->set_content($content, FORMAT_HTML);
+        // Wrap content so the sprite observer can identify plugin-owned steps.
+        $wrappedcontent = \html_writer::div($content, 'local-aca-tour-plugin-step');
+        $step->set_content($wrappedcontent, FORMAT_HTML);
         $step->set_targettype($targettype);
         $step->set_targetvalue($targetvalue);
 

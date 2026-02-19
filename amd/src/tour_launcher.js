@@ -65,9 +65,34 @@ export const init = () => {
         return;
     }
 
+    const isModEdit = window.location.pathname.indexOf('/course/modedit.php') !== -1;
+
+    const startTour = () => {
+        try {
+            // On modedit.php, expand the relevant collapsible sections after the tour has started,
+            // then trigger a few resizes so tool_usertours recalculates placement.
+            if (isModEdit && typeof window.require === 'function') {
+                window.setTimeout(() => {
+                    window.require(['local_adaptive_course_audit/modedit_expander'], (expander) => {
+                        try {
+                            if (expander && typeof expander.init === 'function') {
+                                expander.init();
+                            }
+                        } catch (error) {
+                            window.console.error('[ACA tour_launcher] Expander error', error);
+                        }
+                    });
+                }, 1500);
+            }
+
+            usertourInit([{tourId: id, startTour: true, filtervalues: {cssselector: []}}], ['tool_usertours/filter_cssselector']);
+        } catch (error) {
+            // If this fails, the usertour backdrop can appear without a step.
+            window.console.error('[ACA tour_launcher] Failed to start tour', error);
+        }
+    };
+
     // Short delay so the normal Moodle bootstrap can run first;
     // usertourInit() will end any competing tour before starting ours.
-    window.setTimeout(() => {
-        usertourInit([{tourId: id, startTour: true, filtervalues: {}}], []);
-    }, 500);
+    window.setTimeout(startTour, 500);
 };
