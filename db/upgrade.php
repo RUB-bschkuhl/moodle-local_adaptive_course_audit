@@ -58,6 +58,31 @@ function xmldb_local_adaptive_course_audit_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2024120900, 'local', 'adaptive_course_audit');
     }
 
+    if ($oldversion < 2026022400) {
+        $table = new xmldb_table('local_adaptive_course_review');
+
+        if (!$dbman->table_exists($table)) {
+            $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE);
+            $table->add_field('courseid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            $table->add_field('userid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            $table->add_field('sectionid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            $table->add_field('reviewurl', XMLDB_TYPE_TEXT, 'big', null, null, null, null);
+            $table->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            $table->add_field('timemodified', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+
+            $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+            $table->add_key('courseid_fk', XMLDB_KEY_FOREIGN, ['courseid'], 'course', ['id']);
+            $table->add_key('userid_fk', XMLDB_KEY_FOREIGN, ['userid'], 'user', ['id']);
+
+            $table->add_index('courseuseruniq', XMLDB_INDEX_UNIQUE, ['courseid', 'userid']);
+            $table->add_index('timemodified_idx', XMLDB_INDEX_NOTUNIQUE, ['timemodified']);
+
+            $dbman->create_table($table);
+        }
+
+        upgrade_plugin_savepoint(true, 2026022400, 'local', 'adaptive_course_audit');
+    }
+
     return true;
 }
 

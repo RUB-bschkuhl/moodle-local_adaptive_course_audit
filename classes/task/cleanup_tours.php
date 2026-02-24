@@ -36,6 +36,8 @@ final class cleanup_tours extends scheduled_task {
     private const RETENTION_SECONDS = 12 * HOURSECS; 
     /** @var string Config marker for action/subtours owned by this plugin. */
     private const ACTION_TOUR_CONFIG_MARKER = 'local_adaptive_course_audit_action';
+    /** @var string Table storing latest audit-review starts per user/course. */
+    private const REVIEW_START_TABLE = 'local_adaptive_course_review';
     /** @var string Core usertours config key for last major update timestamp. */
     private const TOUR_MAJOR_UPDATE_TIME_CONFIG = 'majorupdatetime';
     /** @var string Config key holding a plugin-set tour creation timestamp. */
@@ -102,6 +104,13 @@ final class cleanup_tours extends scheduled_task {
 
         // Also remove stale action tours (subtours) which are not stored in local_adaptive_course_tour.
         $this->cleanup_stale_action_tours($manager, $cutoff);
+
+        // Clean up stale "latest audit review start" markers.
+        try {
+            $DB->delete_records_select(self::REVIEW_START_TABLE, $select, $params);
+        } catch (\Throwable $exception) {
+            debugging('Error deleting stale adaptive course review start records: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+        }
     }
 
     /**

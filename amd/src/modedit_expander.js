@@ -67,6 +67,8 @@ const expandRelevantFieldsets = () => {
     const selectors = [
         '#id_preferredbehaviour',
         '#id_attempts',
+        '#id_completion',
+        '#fitem_id_completion',
         '#id_grademethod',
         '#id_attemptimmediately',
         '[id^="fitem_id_feedbacktext"]',

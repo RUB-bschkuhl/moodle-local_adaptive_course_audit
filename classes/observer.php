@@ -31,7 +31,6 @@ use tool_usertours\tour as usertour;
  */
 final class observer
 {
-
     /**
      * Queue deletion for all plugin-owned action/sub tours belonging to the same course as the main tour.
      *
@@ -131,6 +130,7 @@ final class observer
         $data = $event->get_data();
         $tourid = (int)($data['objectid'] ?? 0);
         $stepindex = isset($data['other']['stepindex']) ? (int)$data['other']['stepindex'] : -1;
+        $userid = (int)($data['userid'] ?? 0);
 
         if ($tourid <= 0) {
             return;
@@ -223,6 +223,27 @@ final class observer
         // if ($ismain && $completed) {
         if ($ismain) {
             self::queue_related_subtour_deletions($tourid);
+
+            // Remove the stored "resume audit" marker once the audit tour ends for this user.
+            if ($userid > 0) {
+                try {
+                    $mapping = $DB->get_record(
+                        'local_adaptive_course_tour',
+                        ['tourid' => $tourid],
+                        'courseid',
+                        IGNORE_MISSING
+                    );
+                    $courseid = !empty($mapping) && !empty($mapping->courseid) ? (int)$mapping->courseid : 0;
+                    if ($courseid > 0) {
+                        $DB->delete_records('local_adaptive_course_review', [
+                            'courseid' => $courseid,
+                            'userid' => $userid,
+                        ]);
+                    }
+                } catch (\Throwable $exception) {
+                    debugging('Error deleting adaptive course audit review start marker: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+                }
+            }
         }
         try {
             $manager = new tour_manager();

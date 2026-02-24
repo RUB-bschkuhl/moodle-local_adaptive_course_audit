@@ -239,7 +239,7 @@ if ($hasmanagecap) {
         $starturl,
         $iconhtml,
         [
-            'class' => 'btn btn-primary local-adaptive-course-audit-start-button',
+            'class' => 'btn btn-secondary local-adaptive-course-audit-start-button',
             'title' => get_string('startreview', 'local_adaptive_course_audit'),
         ]
     );

@@ -38,7 +38,7 @@ function local_adaptive_course_audit_extend_navigation_course(
     stdClass $course,
     context $context
 ): void {
-    global $PAGE, $DB;
+    global $PAGE, $DB, $USER;
 
     if (!has_capability('local/adaptive_course_audit:view', $context)) {
         return;
@@ -51,7 +51,7 @@ function local_adaptive_course_audit_extend_navigation_course(
         return;
     }
 
-    $navigation->add(
+    $reviewnode = $navigation->add(
         get_string('reviewcoursenode', 'local_adaptive_course_audit'),
         $url,
         navigation_node::TYPE_CUSTOM,
@@ -59,6 +59,50 @@ function local_adaptive_course_audit_extend_navigation_course(
         $nodekey,
         new pix_icon('i/report', '')
     );
+
+    // If the user previously started an audit tour in this course (and it hasn't ended yet),
+    // show a quick navigation link to rerun/continue it.
+    $hasmanagecap = has_capability('moodle/course:manageactivities', $context);
+    if ($hasmanagecap && !empty($USER) && !empty($USER->id)) {
+        try {
+            $lastreview = $DB->get_record(
+                'local_adaptive_course_review',
+                ['courseid' => (int)$course->id, 'userid' => (int)$USER->id],
+                'id, sectionid',
+                IGNORE_MISSING
+            );
+            if (!empty($lastreview) && !empty($lastreview->id)) {
+                $resumeparams = [
+                    'courseid' => (int)$course->id,
+                    'action' => 'startreview',
+                    'sesskey' => sesskey(),
+                ];
+                if (!empty($lastreview->sectionid) && (int)$lastreview->sectionid > 0) {
+                    $resumeparams['sectionid'] = (int)$lastreview->sectionid;
+                }
+                $resumeurl = new moodle_url('/local/adaptive_course_audit/review.php', $resumeparams);
+
+
+                $url = new moodle_url('/local/adaptive_course_audit/review.php', ['courseid' => $course->id]);
+                $resumenodekey = 'local_adaptive_course_audit_review_resume';
+
+                if ($navigation->find($resumenodekey, navigation_node::TYPE_CUSTOM)) {
+                    return;
+                }
+
+                $resumenode = $navigation->add(
+                    get_string('reviewcoursenode_resume', 'local_adaptive_course_audit'),
+                    $resumeurl,
+                    navigation_node::TYPE_CUSTOM,
+                    null,
+                    'local_adaptive_course_audit_review_resume',
+                    new pix_icon('i/reload', '')
+                );
+            }
+        } catch (Throwable $exception) {
+            debugging('Error checking adaptive course audit resume link: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+        }
+    }
 
     $hastour = false;
     try {
@@ -101,4 +145,3 @@ function local_adaptive_course_audit_extend_navigation_course(
         }
     }
 }
-

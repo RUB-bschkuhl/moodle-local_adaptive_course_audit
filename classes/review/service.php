@@ -44,6 +44,7 @@ use tool_usertours\tour;
  */
 final class service {
     private const TOUR_TABLE = 'local_adaptive_course_tour';
+    private const REVIEW_TABLE = 'local_adaptive_course_review';
 
     /** @var string Teach tour key: combined quiz guided help. */
     private const TEACH_KEY_QUIZ_GUIDED_HELP = 'quizguidedhelp';
@@ -163,6 +164,7 @@ final class service {
      */
     public static function start_review(int $courseid, ?int $sectionid = null): array {
         global $DB;
+        global $USER;
 
         $course = get_course($courseid);
         $context = context_course::instance($course->id);
@@ -205,6 +207,13 @@ final class service {
 
         $manager->reset_tour_for_all_users((int)$tour->get_id());
 
+        // Track the most recent audit review started per user and course.
+        try {
+            self::store_latest_audit_review_start((int)$course->id, (int)$USER->id, $sectionid);
+        } catch (\Throwable $exception) {
+            debugging('Error storing adaptive course audit review start: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+        }
+
         // Run loop-based checks to gather adaptive insights.
         try {
             $sanitisedsectionid = ($sectionid !== null && $sectionid > 0) ? (int)$sectionid : null;
@@ -220,6 +229,70 @@ final class service {
             'status' => true,
             'tourid' => (int)$tour->get_id(),
         ];
+    }
+
+    /**
+     * Store the latest audit-review start per user and course.
+     *
+     * This is used to resume/re-run a review action elsewhere (whole-course or a specific section).
+     *
+     * @param int $courseid
+     * @param int $userid
+     * @param int|null $sectionid
+     * @return void
+     */
+    private static function store_latest_audit_review_start(int $courseid, int $userid, ?int $sectionid): void {
+        global $DB;
+
+        if ($courseid <= 0 || $userid <= 0) {
+            return;
+        }
+
+        $sanitisedsectionid = ($sectionid !== null && $sectionid > 0) ? (int)$sectionid : 0;
+
+        // Store a stable URL (without sesskey) so it can be reconstructed later.
+        $urlparams = [
+            'courseid' => $courseid,
+            'action' => 'startreview',
+        ];
+        if ($sanitisedsectionid > 0) {
+            $urlparams['sectionid'] = $sanitisedsectionid;
+        }
+        $reviewurl = (new \moodle_url('/local/adaptive_course_audit/review.php', $urlparams))->out(false);
+
+        $now = time();
+
+        $existing = null;
+        try {
+            $existing = $DB->get_record(self::REVIEW_TABLE, [
+                'courseid' => $courseid,
+                'userid' => $userid,
+            ]);
+        } catch (\Throwable $exception) {
+            debugging('Error fetching existing adaptive course review start: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+            $existing = null;
+        }
+
+        if (!empty($existing) && !empty($existing->id)) {
+            $record = (object)[
+                'id' => (int)$existing->id,
+                'sectionid' => $sanitisedsectionid,
+                'reviewurl' => $reviewurl,
+                'timemodified' => $now,
+            ];
+            $DB->update_record(self::REVIEW_TABLE, $record);
+            return;
+        }
+
+        $record = (object)[
+            'courseid' => $courseid,
+            'userid' => $userid,
+            'sectionid' => $sanitisedsectionid,
+            'reviewurl' => $reviewurl,
+            'timecreated' => $now,
+            'timemodified' => $now,
+        ];
+        $DB->insert_record(self::REVIEW_TABLE, $record);
     }
 
     /**
@@ -430,6 +503,13 @@ final class service {
                     'config' => $commonconfig,
                 ],
                 [
+                    'title' => get_string('actiontour_quizcompletion_step_completion_title', 'local_adaptive_course_audit'),
+                    'content' => get_string('actiontour_quizcompletion_step_completion_body', 'local_adaptive_course_audit'),
+                    'targettype' => (string)target::TARGET_SELECTOR,
+                    'targetvalue' => '#fitem_id_completion, #id_completion',
+                    'config' => $commonconfig,
+                ],
+                [
                     'title' => get_string('actiontour_quizgrading_step_grade_title', 'local_adaptive_course_audit'),
                     'content' => get_string('actiontour_quizgrading_step_grade_body', 'local_adaptive_course_audit'),
                     'targettype' => (string)target::TARGET_SELECTOR,
@@ -586,8 +666,8 @@ final class service {
             new loop_quiz_adaptive_behaviour(),
             new loop_quiz_random_questions(),
             new loop_lesson_branching(),
-            new loop_h5p_interactive(),
-            new loop_diagnostic_checkpoint(),
+          //  new loop_h5p_interactive(),
+          //  new loop_diagnostic_checkpoint(),
         ];
 
         foreach ($sections as $sectioninfo) {
@@ -660,6 +740,12 @@ final class service {
      */
     private static function add_loop_results_as_steps(tour_manager $manager, array $results, array $actiontourmap = []): void {
         foreach ($results as $result) {
+            // For now, exclude "success" results (i.e. when the user already implemented the recommendation).
+            // We keep the underlying rule + strings intact so we can re-enable these steps later if desired.
+            if (!empty($result->status)) {
+                continue;
+            }
+
             $headline = $result->headline ?? '';
             if ($headline === '') {
                 $headline = $result->rule_name ?? get_string('reviewcourseheading', 'local_adaptive_course_audit');
