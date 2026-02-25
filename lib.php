@@ -38,7 +38,7 @@ function local_adaptive_course_audit_extend_navigation_course(
     stdClass $course,
     context $context
 ): void {
-    global $PAGE, $DB, $USER;
+    global $PAGE, $DB, $USER, $OUTPUT;
 
     if (!has_capability('local/adaptive_course_audit:view', $context)) {
         return;
@@ -80,18 +80,27 @@ function local_adaptive_course_audit_extend_navigation_course(
                 if (!empty($lastreview->sectionid) && (int)$lastreview->sectionid > 0) {
                     $resumeparams['sectionid'] = (int)$lastreview->sectionid;
                 }
-                $resumeurl = new moodle_url('/local/adaptive_course_audit/review.php', $resumeparams);
+                $reviewstarturl = new moodle_url('/local/adaptive_course_audit/review.php', $resumeparams);
 
+                // Ensure editing mode is enabled before launching the audit tour flow.
+                // Editing toggle redirects, so we preserve the actual start URL via `return`.
+                $resumeurl = new moodle_url('/course/view.php', [
+                    'id' => (int)$course->id,
+                    'edit' => 1,
+                    'sesskey' => sesskey(),
+                    'return' => $reviewstarturl->out_as_local_url(false),
+                ]);
 
-                $url = new moodle_url('/local/adaptive_course_audit/review.php', ['courseid' => $course->id]);
-                $resumenodekey = 'local_adaptive_course_audit_review_resume';
-
-                if ($navigation->find($resumenodekey, navigation_node::TYPE_CUSTOM)) {
+                if ($navigation->find('local_adaptive_course_audit_review_resume', navigation_node::TYPE_CUSTOM)) {
                     return;
                 }
+                // Note: the course secondary navigation (moremenu) does not render navigation_node icons.
+                // If we want an icon here, we must embed it in the node text.
+                $resumetext = get_string('reviewcoursenode_resume', 'local_adaptive_course_audit') . ' ' . 
+                $OUTPUT->pix_icon('i/reload', '');
 
-                $resumenode = $navigation->add(
-                    get_string('reviewcoursenode_resume', 'local_adaptive_course_audit'),
+                $navigation->add(
+                    $resumetext,
                     $resumeurl,
                     navigation_node::TYPE_CUSTOM,
                     null,

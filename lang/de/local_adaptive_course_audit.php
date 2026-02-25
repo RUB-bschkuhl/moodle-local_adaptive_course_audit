@@ -29,7 +29,7 @@ $string['pluginname'] = 'Adaptives Kurs-Audit';
 $string['reviewcoursenode'] = 'Kurs prüfen';
 $string['reviewcoursenode_resume'] = 'Letzte Prüfung fortsetzen';
 $string['reviewcourseheading'] = 'Adaptives Kurs-Audit';
-$string['reviewcourseintro'] = 'Bereit, „{$a}“ zu verbessern? Klicken Sie auf die Schaltfläche unten – wir zeigen Ihnen, was gut läuft und wo noch Potenzial steckt.</br>';
+$string['reviewcourseintro'] = 'Bereit, „{$a}“ zu verbessern? Klicken Sie auf die Schaltfläche unten – wir zeigen Ihnen, was gut läuft und wo noch Potenzial steckt.';
 $string['reviewcoursedescription'] = 'Analysiert Ihren gesamten Kurs und erstellt eine geführte Tour mit Vorschlägen. <b>Tipp:</b> Starten Sie zuerst mit einem einzelnen Abschnitt.';
 $string['startreview'] = 'Prüfung starten';
 $string['startreviewhelp'] = 'Wählen Sie einen Eintrag aus und starten Sie die Prüfung, um Tipps direkt auf Ihrer Kursseite zu sehen. Tipp: Starten Sie mit einer Abschnittsprüfung, um den Einstieg überschaubar zu halten.';
@@ -86,6 +86,16 @@ $string['adaptive_course_audit:view'] = 'Kursprüfungsseite anzeigen';
 
 // Tasks.
 $string['task_cleanup_tours'] = 'Veraltete Touren des adaptiven Kurs-Audits bereinigen';
+
+// Kurs-Ebene: Filter-Einstellungen (Auto-Verlinkung von Aktivitätsnamen).
+$string['rule_course_filter_activitynames_name'] = 'Aktivitäts-Verlinkung im Feedback';
+$string['rule_course_filter_activitynames_description'] = 'Prüft, ob der Filter „Aktivitätsnamen automatisch verlinken“ in diesem Kurs aktiviert ist (hilft beim Verlinken von Kursmaterial im Feedback).';
+$string['rule_course_filter_activitynames_rationale'] = '<h5>Warum das wichtig ist</h5><p>Handlungsleitendes Feedback verweist oft auf passende nächste Ressourcen.</p><p>Wenn <strong>Aktivitätsnamen automatisch verlinken</strong> aktiviert ist, können Sie in Quiz-/Frage-Feedbacks Aktivitätsnamen nennen und Moodle verlinkt diese automatisch – so lassen sich Lernende leichter zu hilfreichen Inhalten steuern (vgl. Leitfaden adaptive Lehre, 2025; MIau.nrw).</p>';
+$string['rule_course_filter_activitynames_headline_success'] = 'Aktivitäts-Verlinkung ist verfügbar';
+$string['rule_course_filter_activitynames_headline_needs_work'] = 'Aktivitäts-Verlinkung ist nicht aktiviert';
+$string['rule_course_filter_activitynames_missing'] = 'Wir empfehlen, den Filter <strong>Aktivitätsnamen automatisch verlinken</strong> in diesem Kurs zu aktivieren, damit Verweise im Feedback direkt zu Links werden können.';
+$string['rule_course_filter_activitynames_notavailable'] = 'Der Filter <strong>Aktivitätsnamen automatisch verlinken</strong> scheint in diesem Kurs nicht verfügbar zu sein (evtl. ist er systemweit deaktiviert). Es kann hilfreich sein, die Aktivierung bei der Administration anzufragen.';
+$string['touraction_open_course_filters'] = 'Filter-Einstellungen im Kurs öffnen';
 
 // Quiz unlock follow-ups rule strings.
 $string['rule_loop_quiz_unlock_followups_name'] = 'Erst lernen, dann nachweisen';

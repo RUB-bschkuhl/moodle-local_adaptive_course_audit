@@ -24,9 +24,9 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version   = 2026022400;
+$plugin->version   = 2026022501;
 $plugin->requires  = 2024100700; // Moodle 4.5 release.
 $plugin->component = 'local_adaptive_course_audit';
 $plugin->maturity  = MATURITY_ALPHA;
-$plugin->release   = '0.3.1';
+$plugin->release   = '0.3.2';
 

@@ -58,9 +58,20 @@ if ($action === 'startreview') {
             if (!empty($reviewresult['tourid'])) {
                 $redirectparams['startacatour'] = (int)$reviewresult['tourid'];
             }
-            redirect(
-                new moodle_url('/course/view.php', $redirectparams)
-            );
+            $targeturl = new moodle_url('/course/view.php', $redirectparams);
+
+            // Some audit steps require editing mode. If the user is allowed to edit, turn it on first.
+            // Enabling edit mode redirects, so we preserve the actual target URL via the `return` param.
+            if (has_capability('moodle/course:manageactivities', $context)) {
+                $targeturl = new moodle_url('/course/view.php', [
+                    'id' => (int)$course->id,
+                    'edit' => 1,
+                    'sesskey' => sesskey(),
+                    'return' => $targeturl->out_as_local_url(false),
+                ]);
+            }
+
+            redirect($targeturl);
         }
 
         $failuremessage = !empty($reviewresult['message'])
@@ -264,7 +275,14 @@ $adaptivetitlecell = html_writer::span(s($adaptivetitle)) . ' ' . html_writer::t
 $rows[] = html_writer::tag(
     'tr',
     html_writer::tag('td', $adaptivetitlecell) .
-        html_writer::tag('td', s($startreviewdescription)) .
+        html_writer::tag(
+            'td',
+            format_text(
+                $startreviewdescription,
+                FORMAT_HTML,
+                ['context' => $context, 'filter' => false]
+            )
+        ) .
         html_writer::tag('td', $actioncell, ['class' => 'local-adaptive-course-audit-actions'])
 );
 
@@ -430,7 +448,16 @@ $table = html_writer::tag(
 echo $OUTPUT->header();
 echo $OUTPUT->heading($pageheading);
 echo html_writer::div(
-    html_writer::div(s($intro . $startreviewhelp), 'local-adaptive-course-audit-hero-text') .
+    format_text(
+        $intro,
+        FORMAT_HTML,
+        ['context' => $context, 'filter' => false]
+    ) .
+        format_text(
+            $startreviewhelp,
+            FORMAT_HTML,
+            ['context' => $context, 'filter' => false]
+        ) .
         ($introimage !== '' ? html_writer::div($introimage, 'local-adaptive-course-audit-hero-image') : ''),
     'local-adaptive-course-audit-hero'
 );

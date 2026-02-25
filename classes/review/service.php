@@ -22,6 +22,7 @@ defined('MOODLE_INTERNAL') || die();
 
 use context_course;
 use local_adaptive_course_audit\review\rules\loops\loop_branch_by_grade;
+use local_adaptive_course_audit\review\rules\loops\loop_course_filter_activitynames_autolinking;
 use local_adaptive_course_audit\review\rules\loops\loop_diagnostic_checkpoint;
 use local_adaptive_course_audit\review\rules\loops\loop_h5p_interactive;
 use local_adaptive_course_audit\review\rules\loops\loop_quiz_unlock_followups;
@@ -658,6 +659,21 @@ final class service {
         $results = [];
         $targetsectionid = ($sectionid !== null && $sectionid > 0) ? $sectionid : null;
         $hasmatchingsection = false;
+
+        // Course-level checks (run once per review).
+        $courserules = [
+            new loop_course_filter_activitynames_autolinking(),
+        ];
+        foreach ($courserules as $courserule) {
+            try {
+                $result = $courserule->check_target(null, $course);
+                if ($result !== null) {
+                    $results[] = $result;
+                }
+            } catch (\Throwable $exception) {
+                debugging('Error running adaptive course audit course rule: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+            }
+        }
 
         $looprules = [
             new loop_quiz_unlock_followups(),

@@ -29,7 +29,7 @@ $string['pluginname'] = 'Adaptive course audit';
 $string['reviewcoursenode'] = 'Review course';
 $string['reviewcoursenode_resume'] = 'Resume last audit';
 $string['reviewcourseheading'] = 'Adaptive course audit';
-$string['reviewcourseintro'] = 'Ready to improve "{$a}"? Hit the button below and we\'ll walk you through what\'s working and what could be better.</br>';
+$string['reviewcourseintro'] = 'Ready to improve "{$a}"? Hit the button below and we\'ll walk you through what\'s working and what could be better.<br/>';
 $string['reviewcoursedescription'] = 'Analyses your whole course and creates a guided tour with suggestions. <b>Tip:</b> if this feels like a lot, start with a single section first.';
 $string['startreview'] = 'Start review';
 $string['startreviewhelp'] = 'Pick a row and start the review to see tips directly on your course page. Tip: start with a section review to keep it manageable.';
@@ -87,6 +87,16 @@ $string['adaptive_course_audit:view'] = 'View the course review page';
 // Tasks.
 $string['task_cleanup_tours'] = 'Clean up stale adaptive course audit tours';
 
+// Course-level: filter settings (auto-linking for activity names).
+$string['rule_course_filter_activitynames_name'] = 'Activity auto-linking in feedback';
+$string['rule_course_filter_activitynames_description'] = 'Check whether the “Activity names auto-linking” filter is enabled in this course (helps link course materials in feedback).';
+$string['rule_course_filter_activitynames_rationale'] = '<h5>Why this matters</h5><p>Actionable feedback often points learners to the right next resource.</p><p>If <strong>Activity names auto-linking</strong> is enabled, you can reference activity names in quiz/question feedback and Moodle will auto-link them—making it easier to steer learners to helpful content (vgl. Leitfaden adaptive Lehre, 2025; MIau.nrw).</p>';
+$string['rule_course_filter_activitynames_headline_success'] = 'Activity auto-linking is available';
+$string['rule_course_filter_activitynames_headline_needs_work'] = 'Activity auto-linking is not enabled';
+$string['rule_course_filter_activitynames_missing'] = 'We recommend enabling the <strong>Activity names auto-linking</strong> filter in this course so activity references in feedback can become direct links.';
+$string['rule_course_filter_activitynames_notavailable'] = 'The <strong>Activity names auto-linking</strong> filter does not appear to be available in this course (it may be disabled site-wide). It can help to ask an admin to enable it.';
+$string['touraction_open_course_filters'] = 'Open course filter settings';
+
 // Quiz unlock follow-ups rule strings.
 $string['rule_loop_quiz_unlock_followups_name'] = 'Learn, then prove it';
 $string['rule_loop_quiz_unlock_followups_headline_min_items'] = 'Add more activities';
@@ -129,7 +139,7 @@ $string['actiontour_gradegate_step_access_body'] = '<p>Open <strong>Restrict acc
 $string['rule_loop_quiz_feedback_name'] = 'Handlungsleitendes Quiz-Feedback';
 $string['rule_loop_quiz_feedback_description'] = 'Check whether the quiz gives actionable overall feedback and supports practice loops (multiple attempts).';
 $string['rule_loop_quiz_feedback_headline_success'] = 'Feedback supports adaptive next steps';
-$string['rule_loop_quiz_feedback_headline_needs_work'] = 'Feedback can be more adaptive';
+$string['rule_loop_quiz_feedback_headline_needs_work'] = 'Feedback could be more adaptive';
 $string['rule_loop_quiz_feedback_missing'] = 'We recommend adding Overall feedback to "{$a}" so learners get guidance after submitting.';
 $string['rule_loop_quiz_feedback_found'] = 'Overall feedback exists for "{$a}".';
 $string['rule_loop_quiz_feedback_missing_links'] = 'It can help to make the feedback actionable (e.g. include links to specific remedial/advanced resources for "{$a}").';
