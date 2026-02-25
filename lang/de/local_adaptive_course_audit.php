@@ -48,7 +48,7 @@ $string['tourintro_audit_content'] = '<p>Die Kurs-Audit-Tour zeigt Verbesserungs
 $string['tourintro_scenario_title'] = 'So nutzen Sie die Szenario-Tour';
 $string['tourintro_scenario_content'] = '<p>Die Szenario-Tour ist eine praktische Checkliste für den Aufbau eines adaptiven Kursdesigns.</p><ul><li><strong>Es wird nichts automatisch geändert</strong> – nutzen Sie die Schritte als Anleitung beim Bearbeiten Ihres Kurses.</li><li>Schalten Sie den Bearbeitungsmodus ein, damit Sie Änderungen direkt umsetzen können.</li><li>Denken Sie in Etappen: erst Struktur, dann Aktivitäten, dann Bedingungen/Feedback.</li></ul>';
 $string['tourintro_teach_title'] = 'So nutzen Sie die geführte Hilfe';
-$string['tourintro_teach_content'] = '<p>Diese kurze Tour konzentriert sich auf eine konkrete Einstellung oder Aktion (z. B. Test-Verhalten, Feedback, Zugriffsbeschränkungen).</p><ul><li>Nehmen Sie die Änderung auf dieser Seite vor und gehen Sie dann zum nächsten Schritt.</li><li><strong>Es wird nichts automatisch geändert</strong> – die Tour erklärt nur, was zu tun ist.</li><li>Sie können die Tour jederzeit schließen und später fortsetzen.</li></ul>';
+$string['tourintro_teach_content'] = '<p>Diese kurze Tour konzentriert sich auf eine konkrete Einstellung oder Aktion (z. B. Test-Verhalten, Feedback, Voraussetzungen).</p><ul><li>Nehmen Sie die Änderung auf dieser Seite vor und gehen Sie dann zum nächsten Schritt.</li><li><strong>Es wird nichts automatisch geändert</strong> – die Tour erklärt nur, was zu tun ist.</li><li>Sie können die Tour jederzeit schließen und später fortsetzen.</li></ul>';
 $string['reviewtableheading'] = 'Was möchten Sie prüfen?';
 $string['table_heading'] = 'Kurs-Audit Touren';
 $string['reviewcoltitle'] = 'Umfang';
@@ -70,9 +70,9 @@ $string['actiontour_loop_quiz_unlock_followups_addquiz_step_name_body'] = '<p>Ge
 $string['actiontour_loop_quiz_unlock_followups_addquiz_step_completion_title'] = 'Abschluss aktivieren';
 $string['actiontour_loop_quiz_unlock_followups_addquiz_step_completion_body'] = '<p>Schalten Sie den <strong>Aktivitätsabschluss</strong> ein, damit Folgeaktivitäten darauf aufbauen können.</p><p><strong>Ziel:</strong> Moodle kann die nächsten Schritte zuverlässig freischalten.</p>';
 $string['actiontour_loop_quiz_unlock_followups_addquiz_step_access_title'] = 'Voraussetzung hinzufügen';
-$string['actiontour_loop_quiz_unlock_followups_addquiz_step_access_body'] = '<p>Nutzen Sie <strong>Zugriffsbeschränkungen</strong>, um den Test hinter die vorbereitende Aktivität zu legen.</p><p>So verhindern Sie, dass Lernende direkt zum Test springen.</p>';
+$string['actiontour_loop_quiz_unlock_followups_addquiz_step_access_body'] = '<p>Nutzen Sie <strong>Voraussetzungen</strong>, um den Test hinter die vorbereitende Aktivität zu legen.</p><p>So verhindern Sie, dass Lernende direkt zum Test springen.</p>';
 $string['actiontour_loop_quiz_unlock_followups_editquiz_step_access_title'] = 'Test absichern';
-$string['actiontour_loop_quiz_unlock_followups_editquiz_step_access_body'] = '<p>Fügen Sie unter <strong>Zugriffsbeschränkungen</strong> eine Abschlussbedingung hinzu, damit zuerst die Vorbereitung erledigt wird.</p><p><strong>Tipp:</strong> Abschlussbedingungen sind meist robuster als Datumsbedingungen.</p>';
+$string['actiontour_loop_quiz_unlock_followups_editquiz_step_access_body'] = '<p>Fügen Sie unter <strong>Voraussetzungen</strong> eine Abschlussbedingung hinzu, damit zuerst die Vorbereitung erledigt wird.</p><p><strong>Tipp:</strong> Abschlussbedingungen sind meist robuster als Datumsbedingungen.</p>';
 $string['actiontour_loop_quiz_unlock_followups_editquiz_step_completion_title'] = 'Abschluss prüfen';
 $string['actiontour_loop_quiz_unlock_followups_editquiz_step_completion_body'] = '<p>Stellen Sie sicher, dass der Abschluss automatisch gesetzt wird, damit Folgeaktivitäten freigeschaltet werden.</p><p><strong>Typisch:</strong> Abschluss beim Abgeben / bei Bestehen.</p>';
 $string['reviewtypeadaptive'] = 'Ganzer Kurs';
@@ -122,32 +122,32 @@ $string['rule_loop_branch_by_grade_description'] = 'Nutzen Sie Noten-/Punktegren
 $string['rule_loop_branch_by_grade_headline_missing_gradeitem'] = 'Notenbasierte Verzweigung nicht verfügbar';
 $string['rule_loop_branch_by_grade_missing_gradeitem'] = 'Für den Test „{$a}“ konnte kein Eintrag im Bewertungsbuch gefunden werden. Prüfen Sie, ob der Test eine Maximalpunktzahl hat und im Bewertungsbuch geführt wird.';
 $string['rule_loop_branch_by_grade_headline_missing'] = 'Noch keine notenbasierten Pfade';
-$string['rule_loop_branch_by_grade_missing'] = 'Wir empfehlen, bei Folgeaktivitäten unter „Zugriffsbeschränkungen“ eine Bedingung „Bewertung“ zu nutzen, damit Lernende je nach Ergebnis in „{$a}“ unterschiedliche nächste Schritte sehen.';
+$string['rule_loop_branch_by_grade_missing'] = 'Wir empfehlen, bei Folgeaktivitäten unter „Voraussetzungen“ eine Bedingung „Bewertung“ zu nutzen, damit Lernende je nach Ergebnis in „{$a}“ unterschiedliche nächste Schritte sehen.';
 $string['rule_loop_branch_by_grade_headline_success'] = 'Notenbasierte Verzweigung gefunden';
 $string['rule_loop_branch_by_grade_found'] = 'Folgeaktivitäten sind über das Ergebnis in „{$a->quiz}“ freigeschaltet: {$a->branches}.';
 $string['rule_loop_branch_by_grade_suggest_two_paths'] = 'Tipp: Definieren Sie sowohl einen Förderpfad (Maximalwert) als auch einen Vertiefungspfad (Minimalwert) für „{$a}“.';
-$string['rule_loop_branch_by_grade_rationale'] = '<h5>Warum das wichtig ist</h5><p>Verzweigungen nach Testergebnis sind ein praxisnaher Weg, auf heterogene Vorkenntnisse zu reagieren.</p><p>Über Zugriffsbeschränkungen können Lernende je nach Leistung zu Förder- oder Vertiefungsaktivitäten geleitet werden (vgl. Leitfaden adaptive Lehre, 2025; MIau.nrw).</p>';
+$string['rule_loop_branch_by_grade_rationale'] = '<h5>Warum das wichtig ist</h5><p>Verzweigungen nach Testergebnis sind ein praxisnaher Weg, auf heterogene Vorkenntnisse zu reagieren.</p><p>Über Voraussetzungen können Lernende je nach Leistung zu Förder- oder Vertiefungsaktivitäten geleitet werden (vgl. Leitfaden adaptive Lehre, 2025; MIau.nrw).</p>';
 $string['rule_loop_branch_by_grade_range_any'] = 'beliebiges Ergebnis';
 $string['rule_loop_branch_by_grade_range_min'] = '≥ {$a}%';
 $string['rule_loop_branch_by_grade_range_max'] = '< {$a}%';
 $string['rule_loop_branch_by_grade_range_between'] = '{$a->min}%–{$a->max}%';
 $string['touraction_add_grade_gate'] = 'Noten-Bedingung zu „{$a}“ hinzufügen';
 $string['actiontour_gradegate_step_access_title'] = 'Bewertungsbedingung hinzufügen';
-$string['actiontour_gradegate_step_access_body'] = '<p>Öffnen Sie <strong>Zugriffsbeschränkungen</strong> und fügen Sie eine Bedingung <strong>Bewertung</strong> (Min/Max) hinzu.</p><p><strong>Ergebnis:</strong> Lernende sehen je nach Punktzahl unterschiedliche Folgepfade.</p>';
+$string['actiontour_gradegate_step_access_body'] = '<p>Öffnen Sie <strong>Voraussetzungen</strong> und fügen Sie eine Bedingung <strong>Bewertung</strong> (Min/Max) hinzu.</p><p><strong>Ergebnis:</strong> Lernende sehen je nach Punktzahl unterschiedliche Folgepfade.</p>';
 
 // Quiz-Feedback-Qualität – Strings.
 $string['rule_loop_quiz_feedback_name'] = 'Handlungsleitendes Quiz-Feedback';
-$string['rule_loop_quiz_feedback_description'] = 'Prüft, ob der Test handlungsleitendes Gesamtfeedback gibt und Übungs-Schleifen (mehrere Versuche) unterstützt.';
+$string['rule_loop_quiz_feedback_description'] = 'Prüft, ob für den Test „Gesamtfeedback“ hinterlegt ist (Basis für handlungsleitende Hinweise und adaptive nächste Schritte).';
 $string['rule_loop_quiz_feedback_headline_success'] = 'Feedback unterstützt adaptive nächste Schritte';
 $string['rule_loop_quiz_feedback_headline_needs_work'] = 'Feedback kann adaptiver werden';
 $string['rule_loop_quiz_feedback_missing'] = 'Wir empfehlen, für „{$a}“ „Gesamtfeedback“ zu hinterlegen, damit Lernende nach der Abgabe konkrete Hinweise erhalten.';
 $string['rule_loop_quiz_feedback_found'] = 'Gesamtfeedback ist für „{$a}“ vorhanden.';
-$string['rule_loop_quiz_feedback_missing_links'] = 'Es kann hilfreich sein, das Feedback handlungsleitend zu gestalten (z. B. mit Links auf passende Förder-/Vertiefungsressourcen für „{$a}“).';
+$string['rule_loop_quiz_feedback_missing_links'] = 'Tipp: Wenn Sie Gesamtfeedback ergänzen, gestalten Sie es handlungsleitend – z. B. mit Links zu passenden Ressourcen. Alternativ können Sie (falls verfügbar) den Filter „Aktivitätsnamen automatisch verlinken“ nutzen, damit genannte Aktivitätsnamen automatisch zu Links werden.';
 $string['rule_loop_quiz_feedback_suggest_attempts'] = 'Tipp: Erlauben Sie mehr als einen Versuch für „{$a}“, damit Lernende nach einem Förderpfad erneut antreten können.';
 $string['rule_loop_quiz_feedback_rationale'] = '<h5>Warum das wichtig ist</h5><p>Feedback in Tests ist ein niedrigschwelliger Einstieg in adaptive Lehre.</p><p><strong>Handlungsleitendes Feedback</strong> (idealerweise mit Links) und Wiederholungsversuche unterstützen Selbststeuerung und helfen, Lücken zu schließen, bevor es weitergeht (vgl. Leitfaden adaptive Lehre, 2025; MIau.nrw).</p>';
 $string['touraction_edit_quiz_feedback'] = 'Feedback in „{$a}“ verbessern';
 $string['actiontour_quizfeedback_step_overallfeedback_title'] = 'Gesamtfeedback ergänzen';
-$string['actiontour_quizfeedback_step_overallfeedback_body'] = '<p>Nutzen Sie <strong>Gesamtfeedback</strong>-Bänder, um je nach Ergebnis unterschiedliche Hinweise zu geben.</p><p><strong>Handlungsleitend:</strong> Verlinken Sie auf passende Folgeaktivitäten (Förderpfad vs. Vertiefung).</p>';
+$string['actiontour_quizfeedback_step_overallfeedback_body'] = '<p>Nutzen Sie <strong>Gesamtfeedback</strong>, um je nach Ergebnis unterschiedliche Hinweise zu geben.</p><p><strong>Handlungsleitend:</strong> Verlinken Sie auf passende Folgeaktivitäten (Förderpfad vs. Vertiefung).</p>';
 $string['actiontour_quizfeedback_step_attempts_title'] = 'Übungs-Schleifen ermöglichen';
 $string['actiontour_quizfeedback_step_attempts_body'] = '<p>Setzen Sie <strong>Versuche erlaubt</strong> auf mehr als 1, wenn Lernende nach einem Förderpfad erneut üben sollen.</p><p>So wird der Test zur Übungs-Schleife mit Feedback.</p>';
 
@@ -186,7 +186,7 @@ $string['touraction_edit_diagnostic'] = '„{$a}“ bearbeiten';
 $string['actiontour_diagnostic_step_name_title'] = 'Checkpoint benennen';
 $string['actiontour_diagnostic_step_name_body'] = 'Wählen Sie einen klaren Namen wie „Kurz-Selbstcheck“ oder „Bedarfsabfrage“, damit Lernende den Zweck verstehen.';
 $string['actiontour_diagnostic_step_access_title'] = 'Optional: Folgeaktivitäten absichern';
-$string['actiontour_diagnostic_step_access_body'] = '<p>Wenn gewünscht: Nutzen Sie <strong>Zugriffsbeschränkungen</strong> (Abschluss), damit Lernende den Checkpoint vor dem Weiterarbeiten abschließen.</p><p><strong>Tipp:</strong> Optional lassen, wenn Überspringen nicht kritisch ist.</p>';
+$string['actiontour_diagnostic_step_access_body'] = '<p>Wenn gewünscht: Nutzen Sie <strong>Voraussetzungen</strong> (Abschluss), damit Lernende den Checkpoint vor dem Weiterarbeiten abschließen.</p><p><strong>Tipp:</strong> Optional lassen, wenn Überspringen nicht kritisch ist.</p>';
 
 // Quiz-Verhalten (adaptiv/interaktiv) – Strings.
 $string['rule_loop_quiz_adaptive_behaviour_name'] = 'Adaptives Quiz-Verhalten';
@@ -215,7 +215,7 @@ $string['touraction_open_lesson_editor'] = 'Lektion-Editor für „{$a}“ öffn
 
 // Zufallsfragen (Aufgabenpools) – Strings.
 $string['rule_loop_quiz_random_questions_name'] = 'Zufallsfragen (Aufgabenpool)';
-$string['rule_loop_quiz_random_questions_description'] = 'Prüft, ob Tests Zufallsfragen aus einem Aufgabenpool nutzen, um Versuche zu variieren.';
+$string['rule_loop_quiz_random_questions_description'] = 'Prüft, ob Tests Zufallsfragen nutzen, um Versuche zu variieren.';
 $string['rule_loop_quiz_random_questions_headline_success'] = 'Zufallsfragen gefunden';
 $string['rule_loop_quiz_random_questions_headline_needs_work'] = 'Noch keine Zufallsfragen';
 $string['rule_loop_quiz_random_questions_rationale'] = '<h5>Warum das wichtig ist</h5><p>Zufallsbasierte Aufgabenpools machen Wiederholungsversuche sinnvoller und unterstützen Übungs-Schleifen.</p><p>Sie sind zudem eine Gestaltungsoption für adaptive Testszenarien (vgl. Leitfaden adaptive Lehre, 2025: „zufallsbasierte Aufgabenpools“).</p>';
@@ -223,6 +223,8 @@ $string['rule_loop_quiz_random_questions_found'] = 'Test „{$a->quiz}“ enthä
 $string['rule_loop_quiz_random_questions_missing'] = 'Test „{$a}“ nutzt noch keine Zufallsfragen. Tipp: Es kann hilfreich sein, Zufallsfragen aus einer kategorisierten Fragensammlung zu ergänzen.';
 $string['rule_loop_quiz_random_questions_empty'] = 'Test „{$a}“ hat noch keine Fragen/Slots (er ist ggf. noch leer).';
 $string['touraction_open_quiz_edit'] = 'Fragen in „{$a}“ bearbeiten';
+$string['actiontour_quizrandomquestions_step_add_title'] = 'Zufallsfrage hinzufügen';
+$string['actiontour_quizrandomquestions_step_add_body'] = '<p>Öffnen Sie hier das <strong>Hinzufügen</strong>-Menü und wählen Sie <strong>Zufallsfrage</strong>.</p><p><strong>Tipp:</strong> Nutzen Sie Kategorien, um Aufgabenpools zu strukturieren und Versuche zu variieren.</p>';
 
 // H5P (Vorhanden?) – Strings.
 $string['rule_loop_h5p_interactive_name'] = 'Interaktives H5P (Vorhanden?)';
@@ -258,7 +260,7 @@ $string['scenario_1_step2_content'] = '<p>Entscheiden Sie sich zunächst für <s
 $string['scenario_1_step3_title'] = '3-Element-Struktur sicherstellen';
 $string['scenario_1_step3_content'] = '<p>Jede adaptive Sektion braucht mindestens:</p><ol><li><strong>Inhalt zum Wissensaufbau</strong> (Seite, Buch, Video, Link)</li><li><strong>Ein Quiz</strong> zur Wissensüberprüfung</li><li><strong>Einen optionalen Inhalt</strong> zur Vertiefung (wird bei Nicht-Bestehen freigeschaltet)</li></ol><div class="local-aca-tour-rationale"><h5>Warum das wichtig ist</h5><p>Die Grundstruktur mit 3 Elementen (Wissensinhalt → Kompetenzabfrage → optionaler Inhalt) ist das Basismuster für Lernpfade mit Verzweigung. Damit können Lernende je nach Ergebnis unterschiedliche nächste Schritte sehen (vgl. Leitfaden adaptive Lehre, 2025; MIau.nrw).</p></div>';
 $string['scenario_1_step4_title'] = 'Adaptiven Loop einrichten';
-$string['scenario_1_step4_content'] = '<p>Richten Sie folgende Abfolge ein:</p><ol><li><strong>Inhalt</strong> zum Wissensaufbau</li><li><strong>Quiz</strong> (Wissensüberprüfung) – mit Abschluss- und Voraussetzungsbedingung</li></ol><p><strong>Wenn bestanden:</strong> Die Sektion ist abgeschlossen.</p><p><strong>Wenn nicht bestanden:</strong></p><ul><li>Alternativer Inhalt wird freigeschaltet (über Zugriffsbeschränkung bei Nicht-Bestehen)</li><li>Erneute Bearbeitung des Quiz möglich (mehrere Versuche erlauben)</li></ul><div class="local-aca-tour-rationale"><h5>Warum das wichtig ist</h5><p>Handlungsleitendes Feedback und Wiederholungsversuche unterstützen Selbststeuerung und helfen Lernenden, Lücken zu schließen, bevor es weitergeht. Übungs-Schleifen sind ein niedrigschwelliger Einstieg in adaptive Lehre (vgl. Leitfaden adaptive Lehre, 2025; MIau.nrw).</p></div>';
+$string['scenario_1_step4_content'] = '<p>Richten Sie folgende Abfolge ein:</p><ol><li><strong>Inhalt</strong> zum Wissensaufbau</li><li><strong>Quiz</strong> (Wissensüberprüfung) – mit Abschluss- und Voraussetzungsbedingung</li></ol><p><strong>Wenn bestanden:</strong> Die Sektion ist abgeschlossen.</p><p><strong>Wenn nicht bestanden:</strong></p><ul><li>Alternativer Inhalt wird freigeschaltet (über Voraussetzungen bei Nicht-Bestehen)</li><li>Erneute Bearbeitung des Quiz möglich (mehrere Versuche erlauben)</li></ul><div class="local-aca-tour-rationale"><h5>Warum das wichtig ist</h5><p>Handlungsleitendes Feedback und Wiederholungsversuche unterstützen Selbststeuerung und helfen Lernenden, Lücken zu schließen, bevor es weitergeht. Übungs-Schleifen sind ein niedrigschwelliger Einstieg in adaptive Lehre (vgl. Leitfaden adaptive Lehre, 2025; MIau.nrw).</p></div>';
 $string['scenario_1_step5_title'] = 'Abschlussquiz als Lernzielkontrolle';
 $string['scenario_1_step5_content'] = '<p>Fügen Sie ein <strong>Abschlussquiz</strong> hinzu, das die zentralen Lernziele prüft.</p><p><strong>Wenn bestanden:</strong> Kurs ist abgeschlossen – Gratifikation (z.B. Badge, Abschlussmeldung).</p><p><strong>Wenn nicht bestanden:</strong> Zurück zum adaptiven Loop (Schritt 4) – Lernende bearbeiten die Fördermaterialien erneut.</p><div class="local-aca-tour-rationale"><h5>Warum das wichtig ist</h5><p>Tests sind zentral für die Lernpfadgestaltung. Eine finale Kompetenzabfrage sichert, dass Lernende die Lernziele erreicht haben, und gibt gleichzeitig Lehrenden Rückmeldung über den Lernerfolg (vgl. Leitfaden adaptive Lehre, 2025; MIau.nrw).</p></div>';
 
@@ -270,7 +272,7 @@ $string['scenario_2_step2_content'] = '<p>Sie möchten den <strong>ganzen Kurs</
 $string['scenario_2_step3_title'] = 'Kurs in Sektionen aufteilen';
 $string['scenario_2_step3_content'] = '<p>Unterteilen Sie die Themen in <strong>Moodle-Sektionen</strong>. Jede Sektion sollte die 3-Element-Struktur enthalten:</p><ol><li><strong>Inhalt</strong> zum Wissensaufbau</li><li><strong>Quiz</strong> zur Wissensüberprüfung</li><li><strong>Optionaler Inhalt</strong> zur Vertiefung</li></ol><div class="local-aca-tour-rationale"><h5>Warum das wichtig ist</h5><p>Beginnen Sie mit einfachen Lernpfaden: Starten Sie mit einem abgeschlossenen Lernpfad (z.B. Video + Quiz + Feedback), bevor Sie skalieren (Handlungsempfehlung 2, Leitfaden adaptive Lehre, 2025).</p></div>';
 $string['scenario_2_step4_title'] = 'Sektionen sequenziell verknüpfen';
-$string['scenario_2_step4_content'] = '<p>Richten Sie in jeder Sektion den adaptiven Loop ein (wie in Pfad 1):</p><ol><li><strong>Inhalt</strong> → <strong>Quiz</strong> → bestanden/nicht bestanden</li></ol><p><strong>Zusätzlich:</strong> Wenn Sektion n abgeschlossen wird, schaltet sich <strong>Sektion n+1</strong> frei.</p><p>Nutzen Sie dafür <strong>Voraussetzungen</strong> und <strong>Abschlussverfolgung</strong> auf Sektionsebene.</p><div class="local-aca-tour-rationale"><h5>Warum das wichtig ist</h5><p>Voraussetzungen steuern die Sichtbarkeit von Inhalten basierend auf bestimmten Bedingungen (Testergebnis, Aktivitätsabschluss). Die sequenzielle Freischaltung stellt sicher, dass Grundlagen sitzen, bevor Vertiefung stattfindet (vgl. Leitfaden adaptive Lehre, 2025; MIau.nrw).</p></div>';
+$string['scenario_2_step4_content'] = '<p>Richten Sie in jeder Sektion den adaptiven Loop ein:</p><ol><li><strong>Inhalt</strong> → <strong>Quiz</strong> → bestanden/nicht bestanden schaltet zusätzliche Materialien frei und/oder Wiederholungen</li></ol><p><strong>Zusätzlich:</strong> Wenn Sektion n abgeschlossen wird, schaltet sich <strong>Sektion n+1</strong> frei.</p><p>Nutzen Sie dafür <strong>Voraussetzungen</strong> und <strong>Abschlussverfolgung</strong> auf Sektionsebene.</p><div class="local-aca-tour-rationale"><h5>Warum das wichtig ist</h5><p>Voraussetzungen steuern die Sichtbarkeit von Inhalten basierend auf bestimmten Bedingungen (Testergebnis, Aktivitätsabschluss). Die sequenzielle Freischaltung stellt sicher, dass Grundlagen sitzen, bevor Vertiefung stattfindet (vgl. Leitfaden adaptive Lehre, 2025; MIau.nrw).</p></div>';
 $string['scenario_2_step5_title'] = 'Abschlussquiz als Lernzielkontrolle';
 $string['scenario_2_step5_content'] = '<p>Fügen Sie ein <strong>Abschlussquiz</strong> hinzu, das die zentralen Lernziele prüft.</p><p><strong>Wenn bestanden:</strong> Kurs ist abgeschlossen – Gratifikation (z.B. Badge, Abschlussmeldung).</p><p><strong>Wenn nicht bestanden:</strong> Zurück zum adaptiven Loop – Lernende bearbeiten die Fördermaterialien erneut.</p><div class="local-aca-tour-rationale"><h5>Warum das wichtig ist</h5><p>Tests sind zentral für die Lernpfadgestaltung. Eine finale Kompetenzabfrage sichert, dass Lernende die Lernziele erreicht haben, und gibt gleichzeitig Lehrenden Rückmeldung über den Lernerfolg (vgl. Leitfaden adaptive Lehre, 2025; MIau.nrw).</p></div>';
 

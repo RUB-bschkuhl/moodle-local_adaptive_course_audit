@@ -100,7 +100,6 @@ class loop_quiz_feedback extends rule_base {
         }
 
         $hasfeedback = false;
-        $hasactionablelinks = false;
         if (!empty($feedbacks)) {
             foreach ($feedbacks as $feedback) {
                 $text = (string)($feedback->feedbacktext ?? '');
@@ -108,9 +107,6 @@ class loop_quiz_feedback extends rule_base {
                     continue;
                 }
                 $hasfeedback = true;
-                if (preg_match('/<a\\s+[^>]*href\\s*=\\s*/i', $text)) {
-                    $hasactionablelinks = true;
-                }
             }
         }
 
@@ -162,19 +158,15 @@ class loop_quiz_feedback extends rule_base {
 
         if (!$hasfeedback) {
             $messages[] = get_string('rule_loop_quiz_feedback_missing', 'local_adaptive_course_audit', $quizcm->name);
+            $messages[] = get_string('rule_loop_quiz_feedback_missing_links', 'local_adaptive_course_audit', $quizcm->name);
+            if (!$multipleattempts) {
+                $messages[] = get_string('rule_loop_quiz_feedback_suggest_attempts', 'local_adaptive_course_audit', $quizcm->name);
+            }
         } else {
             $messages[] = get_string('rule_loop_quiz_feedback_found', 'local_adaptive_course_audit', $quizcm->name);
         }
 
-        if ($hasfeedback && !$hasactionablelinks) {
-            $messages[] = get_string('rule_loop_quiz_feedback_missing_links', 'local_adaptive_course_audit', $quizcm->name);
-        }
-
-        if (!$multipleattempts) {
-            $messages[] = get_string('rule_loop_quiz_feedback_suggest_attempts', 'local_adaptive_course_audit', $quizcm->name);
-        }
-
-        $status = ($hasfeedback && $hasactionablelinks && $multipleattempts);
+        $status = $hasfeedback;
         $headline = $status
             ? get_string('rule_loop_quiz_feedback_headline_success', 'local_adaptive_course_audit')
             : get_string('rule_loop_quiz_feedback_headline_needs_work', 'local_adaptive_course_audit');

@@ -21,6 +21,7 @@ namespace local_adaptive_course_audit\review\rules\loops;
 defined('MOODLE_INTERNAL') || die();
 
 use local_adaptive_course_audit\review\rules\rule_base;
+use tool_usertours\target;
 
 /**
  * Loop rule: detect random questions in a quiz (question pool / random slots).
@@ -121,10 +122,28 @@ class loop_quiz_random_questions extends rule_base {
                 $messages[] = get_string('rule_loop_quiz_random_questions_missing', 'local_adaptive_course_audit', $quizcm->name);
 
                 // Provide a quick link to the quiz editing page for adding random questions.
+                $editurl = new \moodle_url('/mod/quiz/edit.php', ['cmid' => (int)$quizcm->id]);
+                $pathmatch = '/mod/quiz/edit.php%cmid=' . (int)$quizcm->id . '%';
                 $actions[] = [
                     'label' => get_string('touraction_open_quiz_edit', 'local_adaptive_course_audit', $quizcm->name),
-                    'url' => (new \moodle_url('/mod/quiz/edit.php', ['cmid' => (int)$quizcm->id])),
+                    'url' => $editurl,
                     'type' => 'secondary',
+                    'tour' => [
+                        'key' => 'quiz_random_questions_' . (int)$quizcm->id,
+                        'pathmatch' => $pathmatch,
+                        'steps' => [
+                            [
+                                'title' => get_string('actiontour_quizrandomquestions_step_add_title', 'local_adaptive_course_audit'),
+                                'content' => get_string('actiontour_quizrandomquestions_step_add_body', 'local_adaptive_course_audit'),
+                                'targettype' => (string)target::TARGET_SELECTOR,
+                                'targetvalue' => '.last-add-menu a',
+                                'config' => [
+                                    'placement' => 'right',
+                                    'backdrop' => true,
+                                ],
+                            ],
+                        ],
+                    ],
                 ];
             }
         }
