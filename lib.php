@@ -125,6 +125,7 @@ function local_adaptive_course_audit_extend_navigation_course(
     $ismodquizedit = (strpos((string)$PAGE->url->get_path(), '/mod/quiz/edit.php') !== false);
     $acatourid = optional_param('startacatour', 0, PARAM_INT);
     $shouldlaunch = $acatourid > 0 && ($iscourseview || $ismodedit || $ismodquizedit);
+    $shouldexpandmodedit = $ismodedit && optional_param('acaexpand', 0, PARAM_INT) > 0;
 
     // Load the JS tour launcher when the URL parameter is present.
     if ($shouldlaunch) {
@@ -135,6 +136,18 @@ function local_adaptive_course_audit_extend_navigation_course(
             );
         } catch (Throwable $exception) {
             debugging('Error loading adaptive course audit tour launcher: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+        }
+    }
+
+    // Expand relevant modedit fieldsets when coming from an audit step link.
+    if ($shouldexpandmodedit) {
+        try {
+            $PAGE->requires->js_call_amd(
+                'local_adaptive_course_audit/modedit_expander',
+                'init'
+            );
+        } catch (Throwable $exception) {
+            debugging('Error loading adaptive course audit modedit expander: ' . $exception->getMessage(), DEBUG_DEVELOPER);
         }
     }
 

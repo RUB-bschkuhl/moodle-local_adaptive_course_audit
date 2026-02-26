@@ -507,7 +507,7 @@ final class service {
                     'title' => get_string('actiontour_quizcompletion_step_completion_title', 'local_adaptive_course_audit'),
                     'content' => get_string('actiontour_quizcompletion_step_completion_body', 'local_adaptive_course_audit'),
                     'targettype' => (string)target::TARGET_SELECTOR,
-                    'targetvalue' => '#fitem_id_completion, #id_completion',
+                    'targetvalue' => '#id_completion_2',
                     'config' => $commonconfig,
                 ],
                 [
@@ -827,6 +827,16 @@ final class service {
                     }
 
                     $url = $action['url'];
+
+                    // If we send the user to modedit.php from within an audit step, expand relevant
+                    // collapsible fieldsets automatically so settings are visible immediately.
+                    if ($url instanceof \moodle_url) {
+                        $path = (string)$url->get_path();
+                        if (strpos($path, '/course/modedit.php') !== false) {
+                            $url->param('acaexpand', 1);
+                        }
+                    }
+
                     // Inject the startacatour parameter so the JS tour_launcher
                     // can start the corresponding action tour on the target page.
                     if (!empty($action['tour']['key']) && isset($actiontourmap[$action['tour']['key']])) {
