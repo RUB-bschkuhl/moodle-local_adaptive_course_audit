@@ -138,7 +138,7 @@ class loop_branch_by_grade extends rule_base {
         if (empty($branches)) {
             $actions = [];
             // Offer an action tour to add a grade restriction to one follow-up activity (best-effort).
-            $candidate = $this->find_first_nonquiz_module($modules);
+            $candidate = $this->find_first_nonquiz_module_after_quiz($modules, $quizcm);
             if ($candidate !== null) {
                 $editurl = new \moodle_url('/course/modedit.php', [
                     'update' => (int)$candidate->id,
@@ -239,14 +239,20 @@ class loop_branch_by_grade extends rule_base {
     }
 
     /**
-     * Find a first candidate follow-up module (not a quiz) to attach an action tour.
+     * Find the first non-quiz module after the quiz in section order (for grade gate action tour).
      *
-     * @param array $modules
+     * @param array $modules Visible modules in section order.
+     * @param object $quizcm The quiz course module.
      * @return object|null
      */
-    private function find_first_nonquiz_module(array $modules): ?object {
+    private function find_first_nonquiz_module_after_quiz(array $modules, object $quizcm): ?object {
+        $passedquiz = false;
         foreach ($modules as $module) {
-            if (!empty($module->uservisible) && empty($module->deletioninprogress) && $module->modname !== 'quiz') {
+            if ((int)$module->id === (int)$quizcm->id) {
+                $passedquiz = true;
+                continue;
+            }
+            if ($passedquiz && !empty($module->uservisible) && empty($module->deletioninprogress) && $module->modname !== 'quiz') {
                 return $module;
             }
         }
