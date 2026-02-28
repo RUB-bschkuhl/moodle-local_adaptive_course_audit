@@ -122,6 +122,9 @@ if ($action === 'startscenario') {
     try {
         $scenarioresult = review_service::start_scenario_tour((int)$course->id, $scenario);
         if (!empty($scenarioresult['status'])) {
+            // Turn on editing mode so the course edit UI (add section, activity picker) is visible.
+            $USER->editing = 1;
+
             $redirectparams = ['id' => $course->id];
             if (!empty($scenarioresult['tourid'])) {
                 $redirectparams['startacatour'] = (int)$scenarioresult['tourid'];

@@ -32,19 +32,23 @@ use tool_usertours\tour as usertour;
 final class observer
 {
     /**
-     * Queue deletion for all plugin-owned action/sub tours belonging to the same course as the main tour.
+     * Delete plugin-owned action/sub tours that are linked to the given main tour.
      *
-     * Action tours are linked via configdata:
-     * - local_adaptive_course_audit_action = 1
-     * - local_adaptive_course_audit_courseid = <courseid>
+     * New-style linkage (minimalist sequence tours): the subtour stores
+     * local_adaptive_course_audit_prev_tourid = <maintourid> and is only deleted
+     * when that exact main tour ends.
      *
-     * @param int $maintourid The main tour id which just completed.
+     * Old-style linkage (regular audit action tours): no prev_tourid is set, so the
+     * subtour is matched by local_adaptive_course_audit_courseid instead (backward compat).
+     *
+     * @param int $maintourid The main tour id which just ended.
      * @return void
      */
     private static function queue_related_subtour_deletions(int $maintourid): void
     {
         global $DB;
 
+        // Resolve courseid from the mapping table (needed for old-style backward compat).
         $courseid = 0;
         try {
             $mapping = $DB->get_record(
@@ -58,10 +62,6 @@ final class observer
             }
         } catch (\Throwable $exception) {
             debugging('Error resolving course mapping for adaptive main tour: ' . $exception->getMessage(), DEBUG_DEVELOPER);
-            return;
-        }
-
-        if ($courseid <= 0) {
             return;
         }
 
@@ -98,11 +98,24 @@ final class observer
             if (!is_array($config) || empty($config['local_adaptive_course_audit_action'])) {
                 continue;
             }
-            if (
-                empty($config['local_adaptive_course_audit_courseid'])
-                || (int)$config['local_adaptive_course_audit_courseid'] !== $courseid
-            ) {
-                continue;
+
+            $prevtourid = (int)($config['local_adaptive_course_audit_prev_tourid'] ?? 0);
+
+            if ($prevtourid > 0) {
+                // New-style: only delete this subtour if it was explicitly linked to $maintourid.
+                // This prevents a T1-end from accidentally deleting Subtour B (linked to T2).
+                if ($prevtourid !== $maintourid) {
+                    continue;
+                }
+            } else {
+                // Old-style (regular audit tours): match by courseid for backward compatibility.
+                if (
+                    $courseid <= 0
+                    || empty($config['local_adaptive_course_audit_courseid'])
+                    || (int)$config['local_adaptive_course_audit_courseid'] !== $courseid
+                ) {
+                    continue;
+                }
             }
 
             $seen[$tourid] = true;
@@ -140,6 +153,8 @@ final class observer
         $ismain = false;
         $issubtour = false;
         $ownedbyplugin = false;
+        $config = [];
+        $courseid = 0;
 
         try {
             $ismain = $DB->record_exists('local_adaptive_course_tour', ['tourid' => $tourid]);
@@ -150,10 +165,13 @@ final class observer
         try {
             $record = $DB->get_record('tool_usertours_tours', ['id' => $tourid], 'id, configdata', IGNORE_MISSING);
             if (!empty($record) && !empty($record->configdata)) {
-                $config = json_decode((string)$record->configdata, true);
-                if (is_array($config)) {
+                $decoded = json_decode((string)$record->configdata, true);
+                if (is_array($decoded)) {
+                    $config = $decoded;
                     $ownedbyplugin = !empty($config['local_adaptive_course_audit']) || !empty($config['local_adaptive_course_audit_action']);
                     $issubtour = !empty($config['local_adaptive_course_audit_action']);
+                    $courseid = (int)($config['local_adaptive_course_audit_courseid'] ?? 0);
+                    $prevtourid = (int)($config['local_adaptive_course_audit_prev_tourid'] ?? 0);
                 }
             }
         } catch (\Throwable $exception) {
@@ -168,59 +186,17 @@ final class observer
             return;
         }
 
-        // Determine whether the tour ended on the final step.
-        $totalsteps = 0;
-        try {
-            $totalsteps = (int)$DB->count_records('tool_usertours_steps', ['tourid' => $tourid]);
-        } catch (\Throwable $exception) {
-            debugging('Error counting tour steps for adaptive course audit: ' . $exception->getMessage(), DEBUG_DEVELOPER);
-            $totalsteps = 0;
-        }
-
-        $laststepindex = $totalsteps > 0 ? ($totalsteps - 1) : -1;
-        $completed = ($laststepindex >= 0) && ($stepindex >= $laststepindex);
-
-        // TODO for now just delete tours when they end.
-        // Main tours: if ended early, retrigger by bumping majorupdatetime; otherwise delete everything.
-        // if ($ismain && !$completed) {
-        //     // Remove all steps up to (and including) the current step, except the first step.
-        //     // This allows a reload to start at the next step (after the intro step).
-        //     if ($stepindex > 0) {
-        //         try {
-        //             $steps = $DB->get_records(
-        //                 'tool_usertours_steps',
-        //                 ['tourid' => $tourid],
-        //                 'sortorder ASC, id ASC',
-        //                 'id'
-        //             );
-        //             $steps = array_values($steps);
-
-        //             // Delete steps 1..$stepindex (inclusive), but never beyond the step list.
-        //             $maxindex = min($stepindex, count($steps) - 1);
-        //             for ($index = 1; $index <= $maxindex; $index++) {
-        //                 $stepid = (int)($steps[$index]->id ?? 0);
-        //                 if ($stepid > 0) {
-        //                     usertour_step::instance($stepid)->remove();
-        //                 }
-        //             }
-        //         } catch (\Throwable $exception) {
-        //             debugging('Error pruning steps for adaptive main tour: ' . $exception->getMessage(), DEBUG_DEVELOPER);
-        //         }
-        //     }
-
-        //     try {
-        //         $tour = usertour::instance($tourid);
-        //         $tour->set_config('majorupdatetime', time());
-        //         $tour->persist();
-        //     } catch (\Throwable $exception) {
-        //         debugging('Error updating majorupdatetime for adaptive main tour: ' . $exception->getMessage(), DEBUG_DEVELOPER);
-        //     }
-        //     return;
+        // $totalsteps = 0;
+        // try {
+        //     $totalsteps = (int)$DB->count_records('tool_usertours_steps', ['tourid' => $tourid]);
+        // } catch (\Throwable $exception) {
+        //     debugging('Error counting tour steps for adaptive course audit: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+        //     $totalsteps = 0;
         // }
 
-        // Sub tours: always delete only the sub tour; Main tours: delete only when completed.
-        // if ($issubtour || ($ismain && $completed)) {
-        // if ($ismain && $completed) {
+        // $laststepindex = $totalsteps > 0 ? ($totalsteps - 1) : -1;
+        // $completed = ($laststepindex >= 0) && ($stepindex >= $laststepindex);
+
         if ($ismain) {
             self::queue_related_subtour_deletions($tourid);
 
@@ -245,6 +221,50 @@ final class observer
                 }
             }
         }
+
+        if ($issubtour) {
+            // Only used in scenario tours
+            if ($prevtourid > 0) {
+                try {
+                    $prevmanager = new tour_manager();
+                    $prevmanager->delete_tour($prevtourid);
+                    // Find the next sequence tour by looking for another action tour
+                    // whose prev_tourid points to a different (still existing) sequence tour.
+
+                    // TODO problem when multiple people start tours in same course at the same time
+                    $nexttour = $DB->get_record_sql(
+                        'SELECT id, configdata FROM {tool_usertours_tours} WHERE configdata LIKE ? AND configdata NOT LIKE ? AND configdata LIKE ?',
+                        [
+                            '%"local_adaptive_course_audit_courseid":' . $courseid . '%',
+                            '%"local_adaptive_course_audit_action":1%',
+                            '%"local_adaptive_course_audit_prev_tourid":' . $prevtourid . '%',
+                        ]
+                    );
+                    //TODO WÄHLE ALLE tool_usertours_tours AUS WO DIE KURSID PASST, KANN ICH AUS AKTUELL GELÖSCHTER TOUR HOLEN GGF, UND local_adaptive_course_audit_prev_tourid existiert 
+                    //WÄHLE SO DIE NÄCHSTE TOUR AUS DIE GEStARTET WIRD, NICHT INDEM DIE ACTION TOUR DIE DANACH KOMMEN KÖNNTE DIESE BESTIMMT!
+                    $nexttourid = 0;
+                    if (!empty($nexttour)) {
+                        $nexttourid = (int)$nexttour->id;
+                    }
+
+                    // Update the course→tour mapping so lib.php picks up the next sequence tour.
+                    if ($nexttourid > 0 && $courseid > 0) {
+                        //Add to local_adaptive_course_tour table an entry like the following, not update, use the functions that exist dont manipulate the db itself
+                        //| id  | courseid | tourid | timecreated | timemodified |
+                        //| 102 |        2 |    328 |  1772182732 |   1772182732 |
+                        $DB->insert_record('local_adaptive_course_tour', [
+                            'courseid' => $courseid,
+                            'tourid' => $nexttourid,
+                            'timecreated' => time(),
+                            'timemodified' => time(),
+                        ]);
+                    }
+                } catch (\Throwable $exception) {
+                    debugging('Error deleting prev tour / updating next tour mapping after subtour end: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+                }
+            }
+        }
+
         try {
             $manager = new tour_manager();
             $manager->delete_tour($tourid);

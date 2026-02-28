@@ -257,12 +257,40 @@ $string['scenario_1_step1_title'] = 'Reflect on goals and target group';
 $string['scenario_1_step1_content'] = '<p>Before you start adapting your course, clarify your <strong>learning goals</strong>, <strong>target group</strong>, and <strong>prerequisites</strong>.</p><p>Ask yourself: What should learners be able to do at the end? What prior knowledge do they bring?</p><div class="local-aca-tour-rationale"><h5>Why this matters</h5><p>Adaptive teaching requires instructors to develop diagnostic competence to assess learner needs. Reflecting on goals and target group is the starting point for targeted adaptation (cf. Leitfaden adaptive Lehre, 2025; MIau.nrw).</p></div>';
 $string['scenario_1_step2_title'] = 'Define scope: individual parts';
 $string['scenario_1_step2_content'] = '<p>Start by choosing <strong>individual sections</strong> to make adaptive. You don\'t need to redesign the entire course at once.</p><p>Pick a section that is particularly suitable (e.g. one with heterogeneous prior knowledge).</p><div class="local-aca-tour-rationale"><h5>Why this matters</h5><p>Start small: adaptive teaching can begin within a single course section without redesigning the whole course (recommendation 1, Leitfaden adaptive Lehre, 2025).</p></div>';
-$string['scenario_1_step3_title'] = 'Ensure the 3-element structure';
-$string['scenario_1_step3_content'] = '<p>Each adaptive section needs at least:</p><ol><li><strong>Learning content</strong> (page, book, video, link)</li><li><strong>A quiz</strong> for competence checking</li><li><strong>Optional content</strong> for deepening (unlocked when quiz is not passed)</li></ol><div class="local-aca-tour-rationale"><h5>Why this matters</h5><p>The basic 3-element structure (learning content → competence check → optional content) is the foundational pattern for branching learning paths. It allows learners to see different next steps based on their results (cf. Leitfaden adaptive Lehre, 2025; MIau.nrw).</p></div>';
-$string['scenario_1_step4_title'] = 'Set up an adaptive loop';
-$string['scenario_1_step4_content'] = '<p>Set up the following sequence:</p><ol><li><strong>Content</strong> for knowledge building</li><li><strong>Quiz</strong> (competence check) – with completion and prerequisite conditions</li></ol><p><strong>If passed:</strong> The section is complete.</p><p><strong>If not passed:</strong></p><ul><li>Alternative content is unlocked (via access restriction on non-passing)</li><li>Quiz can be retaken (allow multiple attempts)</li></ul><div class="local-aca-tour-rationale"><h5>Why this matters</h5><p>Actionable feedback and retry options support self-steering and help learners close gaps before progressing. Practice loops are a low-threshold entry into adaptive teaching (cf. Leitfaden adaptive Lehre, 2025; MIau.nrw).</p></div>';
-$string['scenario_1_step5_title'] = 'Final quiz as learning goal check';
-$string['scenario_1_step5_content'] = '<p>Add a <strong>final quiz</strong> that checks the core learning goals.</p><p><strong>If passed:</strong> Course is complete – reward (e.g. badge, completion message).</p><p><strong>If not passed:</strong> Back to the adaptive loop (step 4) – learners revisit the support materials.</p><div class="local-aca-tour-rationale"><h5>Why this matters</h5><p>Tests are central to learning path design. A final competence check ensures learners have met the learning goals and gives instructors feedback on learning success (cf. Leitfaden adaptive Lehre, 2025; MIau.nrw).</p></div>';
+$string['scenario_1_step3_title'] = 'The template: Content → Quiz → More Content';
+$string['scenario_1_step3_content'] = '<p>The minimalist adaptive structure has three parts in one section:</p><ol><li><strong>Learning content</strong> – a page, video, or book that introduces the topic</li><li><strong>A quiz</strong> – a short competence check with adaptive mode enabled</li><li><strong>Follow-up content</strong> – additional resources unlocked for students who need more support</li></ol><p>Let\'s build this together, one piece at a time.</p><div class="local-aca-tour-rationale"><h5>Why this matters</h5><p>The basic 3-element structure (learning content → competence check → optional content) is the foundational pattern for branching learning paths. It allows learners to see different next steps based on their results (cf. Leitfaden adaptive Lehre, 2025; MIau.nrw).</p></div>';
+$string['scenario_1_step4_title'] = 'Step 1 of 3 – Create a new section';
+$string['scenario_1_step4_content'] = '<p>First, create a dedicated section for your adaptive unit.</p><ol><li>Make sure course editing is turned on (top right of the course page)</li><li>Scroll to the bottom of your course and click <strong>Add section</strong></li><li>Name it something like <em>Adaptive Unit: [Your Topic]</em></li></ol><p>Click <strong>Next</strong> when your section is ready.</p>';
+$string['scenario_1_step5_title'] = 'Step 2 of 3 – Add learning content';
+$string['scenario_1_step5_content'] = '<p>Now add a learning content page to your course. Click the button below to open the page editor with a guided tour.</p>';
+$string['scenario_1_step5_button'] = 'Add a content page →';
+$string['scenario_1_step6_title'] = 'Step 3 of 3 – Add a quiz';
+$string['scenario_1_step6_content'] = '<p>Now add a quiz for the competence check. Click the button below to open the quiz editor with a guided tour for adaptive settings.</p>';
+$string['scenario_1_step6_button'] = 'Add a quiz →';
+$string['scenario_1_step7_title'] = 'Add follow-up content';
+$string['scenario_1_step7_content'] = '<p>Finally, add content for students who need more support. This could be:</p><ul><li>A <strong>Page</strong> with additional explanations or worked examples</li><li>A <strong>URL</strong> linking to external reading material</li><li>A <strong>File</strong> with supplementary material</li></ul><p>Add this activity in your new section using the standard course editor. Once it\'s there, set access restrictions so it only unlocks for students who did not pass the quiz.</p><p><strong>Your minimalist adaptive structure is now in place. Well done!</strong></p>';
+// Subtour A: Page creation (guided via action button from step 5).
+$string['minimalist_page_tour_intro_title'] = 'Creating your content page';
+$string['minimalist_page_tour_intro_content'] = 'This short guide will walk you through setting up a learning content page for your adaptive unit.';
+$string['minimalist_page_step1_title'] = 'Name your content page';
+$string['minimalist_page_step1_content'] = '<p>Give this page a clear name, for example: <em>Learning Material: [Your Topic]</em></p>';
+$string['minimalist_page_step2_title'] = 'Add your learning content';
+$string['minimalist_page_step2_content'] = '<p>Write or paste your learning content here. Placeholder text is fine for now – you can edit it any time.</p>';
+$string['minimalist_page_step3_title'] = 'Save and return';
+$string['minimalist_page_step3_content'] = '<p>Use the <strong>Save and return to course</strong> button to save this page. Then return to your course guide and click <strong>Next</strong> to continue.</p>';
+// Subtour B: Quiz creation (guided via action button from step 6).
+$string['minimalist_quiz_tour_intro_title'] = 'Creating your adaptive quiz';
+$string['minimalist_quiz_tour_intro_content'] = 'This guide will walk you through the key settings for an adaptive quiz.';
+$string['minimalist_quiz_step1_title'] = 'Name your quiz';
+$string['minimalist_quiz_step1_content'] = '<p>Give this quiz a clear name, for example: <em>Knowledge Check: [Your Topic]</em></p>';
+$string['minimalist_quiz_step2_title'] = 'Set adaptive mode';
+$string['minimalist_quiz_step2_content'] = '<p>Set the question behaviour to <strong>Adaptive mode</strong>. This gives students immediate feedback after each answer and lets them retry questions.</p>';
+$string['minimalist_quiz_step3_title'] = 'Allow multiple attempts';
+$string['minimalist_quiz_step3_content'] = '<p>Allow at least 2–3 attempts. This enables the adaptive retry loop so students can keep practising.</p>';
+$string['minimalist_quiz_step4_title'] = 'Set completion conditions';
+$string['minimalist_quiz_step4_content'] = '<p>Enable a completion condition (e.g. require a passing grade). This is what unlocks or locks follow-up content based on quiz results.</p>';
+$string['minimalist_quiz_step5_title'] = 'Save and return';
+$string['minimalist_quiz_step5_content'] = '<p>Save the quiz using <strong>Save and return to course</strong>. You can add questions to it later directly from the course page.</p>';
 
 // Path 2 – Sequential.
 $string['scenario_2_step1_title'] = 'Reflect on goals and target group';

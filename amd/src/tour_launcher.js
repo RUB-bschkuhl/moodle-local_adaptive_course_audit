@@ -58,11 +58,15 @@ const extractTourIdFromUrl = () => {
 
 /**
  * Entry point: detect URL parameter and launch tour after a short delay.
+ * @param {number} continueTour Optional tour ID to continue after completing the current one (for subtours).
  */
-export const init = () => {
-    const id = extractTourIdFromUrl();
+export const init = (continueTour = 0) => {
+    let id = extractTourIdFromUrl();
     if (!id) {
+        if (continueTour == 0) {
         return;
+        }
+        id = continueTour;
     }
 
     const isModEdit = window.location.pathname.indexOf('/course/modedit.php') !== -1;

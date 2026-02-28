@@ -96,8 +96,8 @@ function local_adaptive_course_audit_extend_navigation_course(
                 }
                 // Note: the course secondary navigation (moremenu) does not render navigation_node icons.
                 // If we want an icon here, we must embed it in the node text.
-                $resumetext = get_string('reviewcoursenode_resume', 'local_adaptive_course_audit') . ' ' . 
-                $OUTPUT->pix_icon('i/reload', '');
+                $resumetext = get_string('reviewcoursenode_resume', 'local_adaptive_course_audit') . ' ' .
+                    $OUTPUT->pix_icon('i/reload', '');
 
                 $navigation->add(
                     $resumetext,
@@ -113,18 +113,24 @@ function local_adaptive_course_audit_extend_navigation_course(
         }
     }
 
+    $iscourseview = strpos((string)$PAGE->pagetype, 'course-view') === 0;
+    $ismodedit = (strpos((string)$PAGE->url->get_path(), '/course/modedit.php') !== false);
+    $ismodquizedit = (strpos((string)$PAGE->url->get_path(), '/mod/quiz/edit.php') !== false);
     $hastour = false;
     try {
-        $hastour = $DB->record_exists('local_adaptive_course_tour', ['courseid' => $course->id]);
+        $acatour = $DB->get_record('local_adaptive_course_tour', ['courseid' => $course->id]);
+        $hastour = !empty($acatour);
+        $tour = $DB->get_record('tool_usertours_tours', ['id' => $acatour->tourid ?? 0]);
+        $tourconfig = $tour->configdata ?? '';
+        //todo check if optional_param has modeit, than
+        $startacatour = !empty($tourconfig) && !empty(json_decode($tourconfig, true)['startacatour']) && !$ismodedit;
     } catch (Throwable $exception) {
         debugging('Error checking adaptive course audit tour mapping: ' . $exception->getMessage(), DEBUG_DEVELOPER);
     }
 
-    $iscourseview = strpos((string)$PAGE->pagetype, 'course-view') === 0;
-    $ismodedit = (strpos((string)$PAGE->url->get_path(), '/course/modedit.php') !== false);
-    $ismodquizedit = (strpos((string)$PAGE->url->get_path(), '/mod/quiz/edit.php') !== false);
     $acatourid = optional_param('startacatour', 0, PARAM_INT);
-    $shouldlaunch = $acatourid > 0 && ($iscourseview || $ismodedit || $ismodquizedit);
+    //check in tourconfig if startacatour is set there
+    $shouldlaunch = ($acatourid > 0 || $startacatour) && ($iscourseview || $ismodedit || $ismodquizedit);
     $shouldexpandmodedit = $ismodedit && optional_param('acaexpand', 0, PARAM_INT) > 0;
 
     // Load the JS tour launcher when the URL parameter is present.
@@ -132,7 +138,8 @@ function local_adaptive_course_audit_extend_navigation_course(
         try {
             $PAGE->requires->js_call_amd(
                 'local_adaptive_course_audit/tour_launcher',
-                'init'
+                'init',
+                [$startacatour ? $tour->id : '0']
             );
         } catch (Throwable $exception) {
             debugging('Error loading adaptive course audit tour launcher: ' . $exception->getMessage(), DEBUG_DEVELOPER);
