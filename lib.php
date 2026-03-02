@@ -117,18 +117,42 @@ function local_adaptive_course_audit_extend_navigation_course(
     $ismodedit = (strpos((string)$PAGE->url->get_path(), '/course/modedit.php') !== false);
     $ismodquizedit = (strpos((string)$PAGE->url->get_path(), '/mod/quiz/edit.php') !== false);
     $hastour = false;
+    $startacatour = false;
+    $tour = null;
+
+    // If a tour is explicitly requested via URL, only launch it if it exists.
+    // Otherwise Moodle core will throw a dml_missing_record_exception during AJAX calls.
+    $acatourid = optional_param('startacatour', 0, PARAM_INT);
+    if ($acatourid > 0) {
+        try {
+            if (!$DB->record_exists('tool_usertours_tours', ['id' => $acatourid])) {
+                debugging('Invalid adaptive course audit startacatour id: ' . $acatourid, DEBUG_DEVELOPER);
+                $acatourid = 0;
+            }
+        } catch (Throwable $exception) {
+            debugging('Error validating adaptive course audit startacatour id: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+            $acatourid = 0;
+        }
+    }
+
     try {
-        $acatour = $DB->get_record('local_adaptive_course_tour', ['courseid' => $course->id]);
+        $acatour = $DB->get_record('local_adaptive_course_tour', ['courseid' => $course->id], '*', IGNORE_MISSING);
         $hastour = !empty($acatour);
-        $tour = $DB->get_record('tool_usertours_tours', ['id' => $acatour->tourid ?? 0]);
-        $tourconfig = $tour->configdata ?? '';
-        //todo check if optional_param has modeit, than
-        $startacatour = !empty($tourconfig) && !empty(json_decode($tourconfig, true)['startacatour']) && !$ismodedit;
+        if (!empty($acatour) && !empty($acatour->tourid)) {
+            $tour = $DB->get_record(
+                'tool_usertours_tours',
+                ['id' => (int)$acatour->tourid],
+                'id, configdata',
+                IGNORE_MISSING
+            );
+            $tourconfig = !empty($tour) ? ($tour->configdata ?? '') : '';
+            $decodedconfig = !empty($tourconfig) ? json_decode((string)$tourconfig, true) : null;
+            $startacatour = !empty($decodedconfig['startacatour']) && !$ismodedit;
+        }
     } catch (Throwable $exception) {
         debugging('Error checking adaptive course audit tour mapping: ' . $exception->getMessage(), DEBUG_DEVELOPER);
     }
 
-    $acatourid = optional_param('startacatour', 0, PARAM_INT);
     //check in tourconfig if startacatour is set there
     $shouldlaunch = ($acatourid > 0 || $startacatour) && ($iscourseview || $ismodedit || $ismodquizedit);
     $shouldexpandmodedit = $ismodedit && optional_param('acaexpand', 0, PARAM_INT) > 0;
@@ -139,7 +163,7 @@ function local_adaptive_course_audit_extend_navigation_course(
             $PAGE->requires->js_call_amd(
                 'local_adaptive_course_audit/tour_launcher',
                 'init',
-                [$startacatour ? $tour->id : '0']
+                [($startacatour && !empty($tour) && !empty($tour->id)) ? (int)$tour->id : 0]
             );
         } catch (Throwable $exception) {
             debugging('Error loading adaptive course audit tour launcher: ' . $exception->getMessage(), DEBUG_DEVELOPER);

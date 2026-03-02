@@ -636,6 +636,53 @@ final class service
         if (!empty($records)) {
             $DB->delete_records(self::TOUR_TABLE, ['courseid' => $courseid]);
         }
+
+        // Clean up orphaned scenario tours for this course.
+        // These can accumulate when store_tour_mapping fails due to the unique constraint
+        // on courseid (e.g. T2/T3 from a previous minimalist scenario run).
+        self::delete_orphaned_scenario_tours($courseid, $manager);
+    }
+
+    /**
+     * Delete orphaned scenario tours that belong to this course but are not tracked in the mapping table.
+     *
+     * @param int $courseid
+     * @param tour_manager $manager
+     * @return void
+     */
+    private static function delete_orphaned_scenario_tours(int $courseid, tour_manager $manager): void
+    {
+        global $DB;
+
+        try {
+            $records = $DB->get_records_sql(
+                'SELECT id, configdata FROM {tool_usertours_tours} WHERE configdata LIKE ?',
+                ['%"local_adaptive_course_audit_scenario"%']
+            );
+        } catch (\Throwable $exception) {
+            debugging('Error fetching orphaned scenario tours: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+            return;
+        }
+
+        foreach ($records as $record) {
+            try {
+                $config = json_decode((string)$record->configdata, true);
+                if (!is_array($config)) {
+                    continue;
+                }
+
+                $isplugin = !empty($config['local_adaptive_course_audit_scenario']);
+                $samecourse = isset($config['local_adaptive_course_audit_courseid'])
+                    && (int)$config['local_adaptive_course_audit_courseid'] === $courseid;
+                if (!$isplugin || !$samecourse) {
+                    continue;
+                }
+
+                $manager->delete_tour((int)$record->id);
+            } catch (\Throwable $exception) {
+                debugging('Error deleting orphaned scenario tour: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+            }
+        }
     }
 
     /**
@@ -1089,7 +1136,9 @@ final class service
         ];
 
         // Config shared by T2 and T3 (sequence continuation tours that auto-trigger on course view).
-        $courseviewpathmatch = '/course/view.php%id=' . $courseid . '%';
+        // Use a non-matching pathmatch so Moodle core bootstrap does NOT pick these up.
+        // They are started via JS tour_launcher using the 'startacatour' configdata flag.
+        $seqtourpathmatch = '/__aca_noop__';
         $seqtourconfig = [
             'displaystepnumbers' => true,
             'showtourwhen' => tour::SHOW_TOUR_UNTIL_COMPLETE,
@@ -1157,12 +1206,14 @@ final class service
             $t2Tour = $t2Manager->create_tour(
                 get_string('scenario_tourname', 'local_adaptive_course_audit', $scenariotitle),
                 get_string('scenario_tourdescription', 'local_adaptive_course_audit'),
-                $courseviewpathmatch,
+                $seqtourpathmatch,
                 $seqtourconfig,
                 false   // no intro step — this is a mid-sequence continuation
             );
             $t2Id = (int)$t2Tour->get_id();
-            self::store_tour_mapping($courseid, $t2Id);
+            // T2 mapping is NOT stored now — the unique constraint on courseid allows only one
+            // mapping at a time, and T1 already occupies it. The observer inserts the T2 mapping
+            // when Subtour A ends and T1 is deleted (see observer::tour_ended).
         } catch (\Throwable $exception) {
             debugging('Error creating minimalist T2 sequence tour: ' . $exception->getMessage(), DEBUG_DEVELOPER);
         }
@@ -1237,7 +1288,7 @@ final class service
             $t3Tour = $t3Manager->create_tour(
                 get_string('scenario_tourname', 'local_adaptive_course_audit', $scenariotitle),
                 get_string('scenario_tourdescription', 'local_adaptive_course_audit'),
-                $courseviewpathmatch,
+                $seqtourpathmatch,
                 [
                     'displaystepnumbers' => true,
                     'showtourwhen' => tour::SHOW_TOUR_UNTIL_COMPLETE,
@@ -1251,7 +1302,8 @@ final class service
                 false   // no intro step
             );
             $t3Id = (int)$t3Tour->get_id();
-            self::store_tour_mapping($courseid, $t3Id);
+            // T3 mapping is NOT stored now — same reason as T2 above.
+            // The observer inserts the T3 mapping when Subtour B ends and T2 is deleted.
         } catch (\Throwable $exception) {
             debugging('Error creating minimalist T3 sequence tour: ' . $exception->getMessage(), DEBUG_DEVELOPER);
         }
