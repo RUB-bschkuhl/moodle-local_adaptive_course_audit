@@ -116,6 +116,8 @@ function local_adaptive_course_audit_extend_navigation_course(
     $iscourseview = strpos((string)$PAGE->pagetype, 'course-view') === 0;
     $ismodedit = (strpos((string)$PAGE->url->get_path(), '/course/modedit.php') !== false);
     $ismodquizedit = (strpos((string)$PAGE->url->get_path(), '/mod/quiz/edit.php') !== false);
+    $isdefaultcompletion = (strpos((string)$PAGE->url->get_path(), '/course/defaultcompletion.php') !== false);
+    $isquestionedit = (strpos((string)$PAGE->url->get_path(), '/question/bank/editquestion/question.php') !== false);
     $hastour = false;
     $startacatour = false;
     $tour = null;
@@ -147,14 +149,14 @@ function local_adaptive_course_audit_extend_navigation_course(
             );
             $tourconfig = !empty($tour) ? ($tour->configdata ?? '') : '';
             $decodedconfig = !empty($tourconfig) ? json_decode((string)$tourconfig, true) : null;
-            $startacatour = !empty($decodedconfig['startacatour']) && !$ismodedit;
+            $startacatour = !empty($decodedconfig['startacatour']) && $iscourseview;
         }
     } catch (Throwable $exception) {
         debugging('Error checking adaptive course audit tour mapping: ' . $exception->getMessage(), DEBUG_DEVELOPER);
     }
 
     //check in tourconfig if startacatour is set there
-    $shouldlaunch = ($acatourid > 0 || $startacatour) && ($iscourseview || $ismodedit || $ismodquizedit);
+    $shouldlaunch = ($acatourid > 0 || $startacatour) && ($iscourseview || $ismodedit || $ismodquizedit || $isdefaultcompletion || $isquestionedit);
     $shouldexpandmodedit = $ismodedit && optional_param('acaexpand', 0, PARAM_INT) > 0;
 
     // Load the JS tour launcher when the URL parameter is present.

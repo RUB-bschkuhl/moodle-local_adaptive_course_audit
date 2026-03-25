@@ -1006,6 +1006,11 @@ final class service
             'reflex' => false,
             'local_adaptive_course_audit_scenario' => $scenario,
         ];
+        if ($scenario === self::SCENARIO_COMPASS) {
+            $tourconfig['local_adaptive_course_audit_courseid'] = (int)$course->id;
+            $tourconfig['local_adaptive_course_audit_compass_hub'] = 1;
+            $tourconfig['startacatour'] = true;
+        }
 
         try {
             $tour = $manager->create_tour(
@@ -1032,6 +1037,18 @@ final class service
                 self::build_minimalist_interactive_steps($manager, (int)$course->id, (int)$tour->get_id());
             } catch (\Throwable $exception) {
                 debugging('Error building minimalist interactive tour: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+            }
+        } else if ($scenario === self::SCENARIO_SEQUENTIAL) {
+            try {
+                self::build_sequential_interactive_steps($manager, (int)$course->id, (int)$tour->get_id());
+            } catch (\Throwable $exception) {
+                debugging('Error building sequential interactive tour: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+            }
+        } else if ($scenario === self::SCENARIO_COMPASS) {
+            try {
+                self::build_compass_interactive_steps($manager, (int)$course->id, (int)$tour->get_id());
+            } catch (\Throwable $exception) {
+                debugging('Error building compass interactive tour: ' . $exception->getMessage(), DEBUG_DEVELOPER);
             }
         } else {
             try {
@@ -1092,6 +1109,627 @@ final class service
         return $steps;
     }
 
+    /**
+     * Find the first quiz activity in the course.
+     *
+     * @param int $courseid
+     * @return \cm_info|null
+     */
+    private static function find_first_quiz_cm(int $courseid): ?\cm_info
+    {
+        $modinfo = get_fast_modinfo($courseid);
+        foreach ($modinfo->get_cms() as $cm) {
+            if (!empty($cm->modname) && $cm->modname === 'quiz') {
+                return $cm;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Resolve a default question category for the given context.
+     *
+     * @param int $courseid
+     * @param \cm_info|null $quizcm
+     * @return \stdClass|null
+     */
+    private static function get_default_question_category(int $courseid, ?\cm_info $quizcm = null): ?\stdClass
+    {
+        global $CFG;
+
+        require_once($CFG->dirroot . '/question/editlib.php');
+
+        try {
+            if ($quizcm !== null) {
+                $basecontext = \context_module::instance((int)$quizcm->id);
+                if (!$basecontext) {
+                    return null;
+                }
+                /** @var \context $questioncontext */
+                $questioncontext = $basecontext;
+                $contexts = new \core_question\local\bank\question_edit_contexts($questioncontext);
+                return question_make_default_categories($contexts->all());
+            }
+
+            $basecontext = \context_course::instance($courseid);
+            if (!$basecontext) {
+                return null;
+            }
+            /** @var \context $questioncontext */
+            $questioncontext = $basecontext;
+            $contexts = new \core_question\local\bank\question_edit_contexts($questioncontext);
+            return question_make_default_categories($contexts->all());
+        } catch (\Throwable $exception) {
+            debugging('Error resolving default question category for compass tour: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+            return null;
+        }
+    }
+
+    /**
+     * Build interactive steps for the compass scenario.
+     *
+     * The hub lives on the course page and auto-restarts when the user returns
+     * from a spoke tour.
+     *
+     * @param tour_manager $manager Manager whose current tour is the compass hub.
+     * @param int $courseid
+     * @param int $maintourid
+     * @return void
+     */
+    private static function build_compass_interactive_steps(tour_manager $manager, int $courseid, int $maintourid): void
+    {
+        $commonconfig = [
+            'placement' => 'right',
+            'orphan' => true,
+            'backdrop' => true,
+        ];
+
+        $modinfo = get_fast_modinfo($courseid);
+        $nextsectionnum = count($modinfo->get_section_info_all());
+        $quizcm = self::find_first_quiz_cm($courseid);
+        $questioncategory = self::get_default_question_category($courseid, $quizcm);
+
+        $actiontourconfig = [
+            'displaystepnumbers' => true,
+            'showtourwhen' => tour::SHOW_TOUR_UNTIL_COMPLETE,
+            'backdrop' => true,
+            'reflex' => false,
+            'local_adaptive_course_audit_action' => 1,
+            'local_adaptive_course_audit_courseid' => $courseid,
+        ];
+
+        $orientationtourid = null;
+        try {
+            $orientationmanager = new tour_manager();
+            $orientationtour = $orientationmanager->create_tour(
+                get_string('compass_orientation_tour_intro_title', 'local_adaptive_course_audit'),
+                get_string('compass_orientation_tour_intro_content', 'local_adaptive_course_audit'),
+                '/__aca_noop__',
+                array_merge($actiontourconfig, [
+                    'local_adaptive_course_audit_key' => 'compass_orientation_creation_' . $courseid,
+                ]),
+                true,
+                get_string('compass_orientation_tour_intro_title', 'local_adaptive_course_audit'),
+                get_string('compass_orientation_tour_intro_content', 'local_adaptive_course_audit')
+            );
+            $orientationmanager->add_step(
+                get_string('compass_orientation_step1_title', 'local_adaptive_course_audit'),
+                get_string('compass_orientation_step1_content', 'local_adaptive_course_audit'),
+                (string)target::TARGET_SELECTOR,
+                '#id_name',
+                $commonconfig
+            );
+            $orientationmanager->add_step(
+                get_string('compass_orientation_step2_title', 'local_adaptive_course_audit'),
+                get_string('compass_orientation_step2_content', 'local_adaptive_course_audit'),
+                (string)target::TARGET_SELECTOR,
+                '#id_contentsection',
+                $commonconfig
+            );
+            $orientationmanager->add_step(
+                get_string('compass_orientation_step3_title', 'local_adaptive_course_audit'),
+                get_string('compass_orientation_step3_content', 'local_adaptive_course_audit'),
+                (string)target::TARGET_SELECTOR,
+                '#id_submitbutton2',
+                $commonconfig
+            );
+            $orientationtourid = (int)$orientationtour->get_id();
+            $orientationmanager->reset_tour_for_all_users($orientationtourid);
+        } catch (\Throwable $exception) {
+            debugging('Error creating compass orientation subtour: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+        }
+
+        $compassquiztourid = null;
+        try {
+            $quizmanager = new tour_manager();
+            $quiztour = $quizmanager->create_tour(
+                get_string('compass_quiz_tour_intro_title', 'local_adaptive_course_audit'),
+                get_string('compass_quiz_tour_intro_content', 'local_adaptive_course_audit'),
+                '/__aca_noop__',
+                array_merge($actiontourconfig, [
+                    'local_adaptive_course_audit_key' => 'compass_quiz_creation_' . $courseid,
+                ]),
+                true,
+                get_string('compass_quiz_tour_intro_title', 'local_adaptive_course_audit'),
+                get_string('compass_quiz_tour_intro_content', 'local_adaptive_course_audit')
+            );
+            $quizmanager->add_step(
+                get_string('compass_quiz_step1_title', 'local_adaptive_course_audit'),
+                get_string('compass_quiz_step1_content', 'local_adaptive_course_audit'),
+                (string)target::TARGET_SELECTOR,
+                '#id_name',
+                $commonconfig
+            );
+            $quizmanager->add_step(
+                get_string('compass_quiz_step2_title', 'local_adaptive_course_audit'),
+                get_string('compass_quiz_step2_content', 'local_adaptive_course_audit'),
+                (string)target::TARGET_SELECTOR,
+                '#id_preferredbehaviour',
+                $commonconfig
+            );
+            $quizmanager->add_step(
+                get_string('compass_quiz_step3_title', 'local_adaptive_course_audit'),
+                get_string('compass_quiz_step3_content', 'local_adaptive_course_audit'),
+                (string)target::TARGET_SELECTOR,
+                '#id_attempts',
+                $commonconfig
+            );
+            $quizmanager->add_step(
+                get_string('compass_quiz_step4_title', 'local_adaptive_course_audit'),
+                get_string('compass_quiz_step4_content', 'local_adaptive_course_audit'),
+                (string)target::TARGET_SELECTOR,
+                '#id_activitycompletionheader',
+                $commonconfig
+            );
+            $quizmanager->add_step(
+                get_string('compass_quiz_step5_title', 'local_adaptive_course_audit'),
+                get_string('compass_quiz_step5_content', 'local_adaptive_course_audit'),
+                (string)target::TARGET_SELECTOR,
+                '#id_submitbutton2',
+                $commonconfig
+            );
+            $compassquiztourid = (int)$quiztour->get_id();
+            $quizmanager->reset_tour_for_all_users($compassquiztourid);
+        } catch (\Throwable $exception) {
+            debugging('Error creating compass quiz subtour: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+        }
+
+        $questioneditortourid = null;
+        try {
+            $questionmanager = new tour_manager();
+            $questiontour = $questionmanager->create_tour(
+                get_string('compass_feedback_tour_intro_title', 'local_adaptive_course_audit'),
+                get_string('compass_feedback_tour_intro_content', 'local_adaptive_course_audit'),
+                '/__aca_noop__',
+                array_merge($actiontourconfig, [
+                    'local_adaptive_course_audit_key' => 'compass_question_feedback_' . $courseid,
+                ]),
+                true,
+                get_string('compass_feedback_tour_intro_title', 'local_adaptive_course_audit'),
+                get_string('compass_feedback_tour_intro_content', 'local_adaptive_course_audit')
+            );
+            $questionmanager->add_step(
+                get_string('compass_feedback_step1_title', 'local_adaptive_course_audit'),
+                get_string('compass_feedback_step1_content', 'local_adaptive_course_audit'),
+                (string)target::TARGET_SELECTOR,
+                'form.mform[data-qtype]',
+                $commonconfig
+            );
+            $questionmanager->add_step(
+                get_string('compass_feedback_step2_title', 'local_adaptive_course_audit'),
+                get_string('compass_feedback_step2_content', 'local_adaptive_course_audit'),
+                (string)target::TARGET_SELECTOR,
+                '#fitem_id_generalfeedback',
+                $commonconfig
+            );
+            $questionmanager->add_step(
+                get_string('compass_feedback_step3_title', 'local_adaptive_course_audit'),
+                get_string('compass_feedback_step3_content', 'local_adaptive_course_audit'),
+                (string)target::TARGET_SELECTOR,
+                '#id_combinedfeedbackhdr',
+                $commonconfig
+            );
+            $questionmanager->add_step(
+                get_string('compass_feedback_step4_title', 'local_adaptive_course_audit'),
+                get_string('compass_feedback_step4_content', 'local_adaptive_course_audit'),
+                (string)target::TARGET_SELECTOR,
+                '#id_answerhdr',
+                $commonconfig
+            );
+            $questionmanager->add_step(
+                get_string('compass_feedback_step5_title', 'local_adaptive_course_audit'),
+                get_string('compass_feedback_step5_content', 'local_adaptive_course_audit'),
+                (string)target::TARGET_SELECTOR,
+                '#id_updatebutton',
+                $commonconfig
+            );
+            $questioneditortourid = (int)$questiontour->get_id();
+            $questionmanager->reset_tour_for_all_users($questioneditortourid);
+        } catch (\Throwable $exception) {
+            debugging('Error creating compass feedback question subtour: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+        }
+
+        $questiongatewaytourid = null;
+        if ($quizcm !== null && $questioneditortourid !== null && $questioncategory !== null) {
+            try {
+                $gatewaymanager = new tour_manager();
+                $questionediturl = new \moodle_url('/question/bank/editquestion/question.php', [
+                    'qtype' => 'multichoice',
+                    'category' => (int)$questioncategory->id,
+                    'cmid' => (int)$quizcm->id,
+                    'returnurl' => '/course/view.php?id=' . $courseid,
+                    'startacatour' => $questioneditortourid,
+                ]);
+                $feedbackbutton = html_writer::link(
+                    $questionediturl->out(false),
+                    s(get_string('compass_feedback_open_editor_button', 'local_adaptive_course_audit')),
+                    ['class' => 'btn btn-primary']
+                );
+                $feedbackbuttonhtml = html_writer::div($feedbackbutton, 'local-adaptive-course-audit-step-actions');
+
+                $gatewaytour = $gatewaymanager->create_tour(
+                    get_string('compass_feedback_gateway_tour_intro_title', 'local_adaptive_course_audit'),
+                    get_string('compass_feedback_gateway_tour_intro_content', 'local_adaptive_course_audit'),
+                    '/__aca_noop__',
+                    array_merge($actiontourconfig, [
+                        'local_adaptive_course_audit_key' => 'compass_feedback_gateway_' . $courseid,
+                    ]),
+                    true,
+                    get_string('compass_feedback_gateway_tour_intro_title', 'local_adaptive_course_audit'),
+                    get_string('compass_feedback_gateway_tour_intro_content', 'local_adaptive_course_audit')
+                );
+                $gatewaymanager->add_step(
+                    get_string('compass_feedback_gateway_step1_title', 'local_adaptive_course_audit'),
+                    get_string('compass_feedback_gateway_step1_content', 'local_adaptive_course_audit'),
+                    (string)target::TARGET_SELECTOR,
+                    '.mod-quiz-edit-content',
+                    $commonconfig
+                );
+                $gatewaymanager->add_step(
+                    get_string('compass_feedback_gateway_step2_title', 'local_adaptive_course_audit'),
+                    get_string('compass_feedback_gateway_step2_content', 'local_adaptive_course_audit') . $feedbackbuttonhtml,
+                    (string)target::TARGET_SELECTOR,
+                    '.mod-quiz-edit-content',
+                    $commonconfig
+                );
+                $questiongatewaytourid = (int)$gatewaytour->get_id();
+                $gatewaymanager->reset_tour_for_all_users($questiongatewaytourid);
+            } catch (\Throwable $exception) {
+                debugging('Error creating compass feedback gateway subtour: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+            }
+        }
+
+        $orientationurl = new \moodle_url('/course/modedit.php', [
+            'add' => 'page',
+            'course' => $courseid,
+            'return' => 0,
+            'section' => $nextsectionnum,
+        ]);
+        if ($orientationtourid !== null) {
+            $orientationurl->param('startacatour', $orientationtourid);
+        }
+        $orientationbutton = html_writer::link(
+            $orientationurl->out(false),
+            s(get_string('scenario_3_step3_button', 'local_adaptive_course_audit')),
+            ['class' => 'btn btn-primary']
+        );
+        $orientationbuttonhtml = html_writer::div($orientationbutton, 'local-adaptive-course-audit-step-actions');
+
+        $compassquizurl = new \moodle_url('/course/modedit.php', [
+            'add' => 'quiz',
+            'course' => $courseid,
+            'return' => 0,
+            'section' => $nextsectionnum,
+        ]);
+        if ($compassquiztourid !== null) {
+            $compassquizurl->param('startacatour', $compassquiztourid);
+        }
+        $compassquizbutton = html_writer::link(
+            $compassquizurl->out(false),
+            s(get_string('scenario_3_step4_button', 'local_adaptive_course_audit')),
+            ['class' => 'btn btn-primary']
+        );
+        $compassquizbuttonhtml = html_writer::div($compassquizbutton, 'local-adaptive-course-audit-step-actions');
+
+        $feedbackbuttonhtml = '';
+        if ($questiongatewaytourid !== null && $quizcm !== null) {
+            $feedbackurl = new \moodle_url('/mod/quiz/edit.php', [
+                'cmid' => (int)$quizcm->id,
+                'startacatour' => $questiongatewaytourid,
+            ]);
+            $feedbackbutton = html_writer::link(
+                $feedbackurl->out(false),
+                s(get_string('scenario_3_step5_button', 'local_adaptive_course_audit')),
+                ['class' => 'btn btn-primary']
+            );
+            $feedbackbuttonhtml = html_writer::div($feedbackbutton, 'local-adaptive-course-audit-step-actions');
+        } else if ($questioneditortourid !== null && $questioncategory !== null) {
+            $feedbackurl = new \moodle_url('/question/bank/editquestion/question.php', [
+                'qtype' => 'multichoice',
+                'category' => (int)$questioncategory->id,
+                'courseid' => $courseid,
+                'returnurl' => '/course/view.php?id=' . $courseid,
+                'startacatour' => $questioneditortourid,
+            ]);
+            $feedbackbutton = html_writer::link(
+                $feedbackurl->out(false),
+                s(get_string('scenario_3_step5_button', 'local_adaptive_course_audit')),
+                ['class' => 'btn btn-primary']
+            );
+            $feedbackbuttonhtml = html_writer::div($feedbackbutton, 'local-adaptive-course-audit-step-actions');
+        }
+
+        $manager->add_step(
+            get_string('scenario_3_step1_title', 'local_adaptive_course_audit'),
+            get_string('scenario_3_step1_content', 'local_adaptive_course_audit'),
+            (string)target::TARGET_UNATTACHED,
+            '',
+            $commonconfig
+        );
+        $manager->add_step(
+            get_string('scenario_3_step2_title', 'local_adaptive_course_audit'),
+            get_string('scenario_3_step2_content', 'local_adaptive_course_audit'),
+            (string)target::TARGET_UNATTACHED,
+            '',
+            $commonconfig
+        );
+        $manager->add_step(
+            get_string('scenario_3_step3_title', 'local_adaptive_course_audit'),
+            get_string('scenario_3_step3_content', 'local_adaptive_course_audit') . $orientationbuttonhtml,
+            (string)target::TARGET_SELECTOR,
+            '#course-addsection',
+            $commonconfig
+        );
+        $manager->add_step(
+            get_string('scenario_3_step4_title', 'local_adaptive_course_audit'),
+            get_string('scenario_3_step4_content', 'local_adaptive_course_audit') . $compassquizbuttonhtml,
+            (string)target::TARGET_SELECTOR,
+            '.course-section:last-child',
+            $commonconfig
+        );
+        $manager->add_step(
+            get_string('scenario_3_step5_title', 'local_adaptive_course_audit'),
+            get_string('scenario_3_step5_content', 'local_adaptive_course_audit') . $feedbackbuttonhtml,
+            (string)target::TARGET_SELECTOR,
+            '.course-section:last-child',
+            $commonconfig
+        );
+
+        $manager->reset_tour_for_all_users($maintourid);
+    }
+
+    /**
+     * Build interactive steps for the sequential scenario.
+     *
+     * Tour 1 (T1, $maintourid): steps 1-4, launched immediately via startacatour URL param.
+     *   - Step 4 contains a button that opens defaultcompletion.php and starts Subtour A.
+     *   - When Subtour A ends it deletes T1, allowing T2 to auto-trigger on the next course view.
+     *
+     * Tour 2 (T2): step 5, auto-triggered on course/view.php once T1 is gone.
+     *   - Step 5 contains a button that opens modedit.php and starts Subtour B (final quiz setup).
+     *
+     * @param tour_manager $manager Manager whose current tour is T1.
+     * @param int $courseid
+     * @param int $maintourid ID of T1.
+     * @return void
+     */
+    private static function build_sequential_interactive_steps(tour_manager $manager, int $courseid, int $maintourid): void
+    {
+        $commonconfig = [
+            'placement' => 'right',
+            'orphan' => true,
+            'backdrop' => true,
+        ];
+
+        $modinfo = get_fast_modinfo($courseid);
+        $nextsectionnum = count($modinfo->get_section_info_all());
+
+        $actiontourconfig = [
+            'displaystepnumbers' => true,
+            'showtourwhen' => tour::SHOW_TOUR_UNTIL_COMPLETE,
+            'backdrop' => true,
+            'reflex' => false,
+            'local_adaptive_course_audit_action' => 1,
+            'local_adaptive_course_audit_courseid' => $courseid,
+        ];
+
+        $seqtourpathmatch = '/__aca_noop__';
+        $seqtourconfig = [
+            'displaystepnumbers' => true,
+            'showtourwhen' => tour::SHOW_TOUR_UNTIL_COMPLETE,
+            'backdrop' => true,
+            'reflex' => false,
+            'local_adaptive_course_audit_scenario' => self::SCENARIO_SEQUENTIAL,
+            'local_adaptive_course_audit_courseid' => $courseid,
+            'local_adaptive_course_audit_prev_tourid' => $maintourid,
+            'startacatour' => true,
+        ];
+
+        $completionsubtourid = null;
+        try {
+            $completionmanager = new tour_manager();
+            $completiontour = $completionmanager->create_tour(
+                get_string('sequential_completion_tour_intro_title', 'local_adaptive_course_audit'),
+                get_string('sequential_completion_tour_intro_content', 'local_adaptive_course_audit'),
+                '/__aca_noop__',
+                array_merge($actiontourconfig, [
+                    'local_adaptive_course_audit_key' => 'sequential_completion_setup',
+                    'local_adaptive_course_audit_prev_tourid' => $maintourid,
+                ]),
+                true,
+                get_string('sequential_completion_tour_intro_title', 'local_adaptive_course_audit'),
+                get_string('sequential_completion_tour_intro_content', 'local_adaptive_course_audit')
+            );
+            $completionmanager->add_step(
+                get_string('sequential_completion_step1_title', 'local_adaptive_course_audit'),
+                get_string('sequential_completion_step1_content', 'local_adaptive_course_audit'),
+                (string)target::TARGET_SELECTOR,
+                '.defaultactivitycompletion-header',
+                $commonconfig
+            );
+            $completionmanager->add_step(
+                get_string('sequential_completion_step2_title', 'local_adaptive_course_audit'),
+                get_string('sequential_completion_step2_content', 'local_adaptive_course_audit'),
+                (string)target::TARGET_SELECTOR,
+                'div[id^="activitycompletion-"]',
+                $commonconfig
+            );
+            $completionsubtourid = (int)$completiontour->get_id();
+            $completionmanager->reset_tour_for_all_users($completionsubtourid);
+        } catch (\Throwable $exception) {
+            debugging('Error creating sequential completion subtour: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+        }
+
+        $t2manager = new tour_manager();
+        $t2id = null;
+        try {
+            $scenariotitle = get_string('scenario_' . self::SCENARIO_SEQUENTIAL . '_title', 'local_adaptive_course_audit');
+            $t2tour = $t2manager->create_tour(
+                get_string('scenario_tourname', 'local_adaptive_course_audit', $scenariotitle),
+                get_string('scenario_tourdescription', 'local_adaptive_course_audit'),
+                $seqtourpathmatch,
+                $seqtourconfig,
+                false
+            );
+            $t2id = (int)$t2tour->get_id();
+        } catch (\Throwable $exception) {
+            debugging('Error creating sequential T2 sequence tour: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+        }
+
+        $quizsubtourid = null;
+        try {
+            $quizmanager = new tour_manager();
+            $quiztour = $quizmanager->create_tour(
+                get_string('sequential_quiz_tour_intro_title', 'local_adaptive_course_audit'),
+                get_string('sequential_quiz_tour_intro_content', 'local_adaptive_course_audit'),
+                '/__aca_noop__',
+                array_merge($actiontourconfig, [
+                    'local_adaptive_course_audit_key' => 'sequential_quiz_creation',
+                    'local_adaptive_course_audit_prev_tourid' => $t2id ?? 0,
+                ]),
+                true,
+                get_string('sequential_quiz_tour_intro_title', 'local_adaptive_course_audit'),
+                get_string('sequential_quiz_tour_intro_content', 'local_adaptive_course_audit')
+            );
+            $quizmanager->add_step(
+                get_string('sequential_quiz_step1_title', 'local_adaptive_course_audit'),
+                get_string('sequential_quiz_step1_content', 'local_adaptive_course_audit'),
+                (string)target::TARGET_SELECTOR,
+                '#id_name',
+                $commonconfig
+            );
+            $quizmanager->add_step(
+                get_string('sequential_quiz_step2_title', 'local_adaptive_course_audit'),
+                get_string('sequential_quiz_step2_content', 'local_adaptive_course_audit'),
+                (string)target::TARGET_SELECTOR,
+                '#id_preferredbehaviour',
+                $commonconfig
+            );
+            $quizmanager->add_step(
+                get_string('sequential_quiz_step3_title', 'local_adaptive_course_audit'),
+                get_string('sequential_quiz_step3_content', 'local_adaptive_course_audit'),
+                (string)target::TARGET_SELECTOR,
+                '#id_attempts',
+                $commonconfig
+            );
+            $quizmanager->add_step(
+                get_string('sequential_quiz_step4_title', 'local_adaptive_course_audit'),
+                get_string('sequential_quiz_step4_content', 'local_adaptive_course_audit'),
+                (string)target::TARGET_SELECTOR,
+                '#id_activitycompletionheader',
+                $commonconfig
+            );
+            $quizmanager->add_step(
+                get_string('sequential_quiz_step5_title', 'local_adaptive_course_audit'),
+                get_string('sequential_quiz_step5_content', 'local_adaptive_course_audit'),
+                (string)target::TARGET_SELECTOR,
+                '#id_submitbutton2',
+                $commonconfig
+            );
+            $quizsubtourid = (int)$quiztour->get_id();
+            $quizmanager->reset_tour_for_all_users($quizsubtourid);
+        } catch (\Throwable $exception) {
+            debugging('Error creating sequential quiz subtour: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+        }
+
+        $completionurl = new \moodle_url('/course/defaultcompletion.php', [
+            'id' => $courseid,
+        ]);
+        if ($completionsubtourid !== null) {
+            $completionurl->param('startacatour', $completionsubtourid);
+        }
+        $completionbtn = html_writer::link(
+            $completionurl->out(false),
+            s(get_string('scenario_2_step4_button', 'local_adaptive_course_audit')),
+            ['class' => 'btn btn-primary']
+        );
+        $completionbtnhtml = html_writer::div($completionbtn, 'local-adaptive-course-audit-step-actions');
+
+        $quizurl = new \moodle_url('/course/modedit.php', [
+            'add' => 'quiz',
+            'course' => $courseid,
+            'return' => 0,
+            'section' => $nextsectionnum,
+        ]);
+        if ($quizsubtourid !== null) {
+            $quizurl->param('startacatour', $quizsubtourid);
+        }
+        $quizbtn = html_writer::link(
+            $quizurl->out(false),
+            s(get_string('scenario_2_step5_button', 'local_adaptive_course_audit')),
+            ['class' => 'btn btn-primary']
+        );
+        $quizbtnhtml = html_writer::div($quizbtn, 'local-adaptive-course-audit-step-actions');
+
+        $manager->add_step(
+            get_string('scenario_2_step1_title', 'local_adaptive_course_audit'),
+            get_string('scenario_2_step1_content', 'local_adaptive_course_audit'),
+            (string)target::TARGET_UNATTACHED,
+            '',
+            $commonconfig
+        );
+        $manager->add_step(
+            get_string('scenario_2_step2_title', 'local_adaptive_course_audit'),
+            get_string('scenario_2_step2_content', 'local_adaptive_course_audit'),
+            (string)target::TARGET_UNATTACHED,
+            '',
+            $commonconfig
+        );
+        $manager->add_step(
+            get_string('scenario_2_step3_title', 'local_adaptive_course_audit'),
+            get_string('scenario_2_step3_content', 'local_adaptive_course_audit'),
+            (string)target::TARGET_SELECTOR,
+            '#course-addsection',
+            $commonconfig
+        );
+        $manager->add_step(
+            get_string('scenario_2_step4_title', 'local_adaptive_course_audit'),
+            get_string('scenario_2_step4_content', 'local_adaptive_course_audit') . $completionbtnhtml,
+            (string)target::TARGET_SELECTOR,
+            '.course-section:last-child',
+            $commonconfig
+        );
+
+        if ($t2id !== null) {
+            try {
+                $t2manager->add_step(
+                    get_string('scenario_2_step5_title', 'local_adaptive_course_audit'),
+                    get_string('scenario_2_step5_content', 'local_adaptive_course_audit') . $quizbtnhtml,
+                    (string)target::TARGET_SELECTOR,
+                    '.course-section:last-child',
+                    $commonconfig
+                );
+            } catch (\Throwable $exception) {
+                debugging('Error adding step to sequential T2 tour: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+            }
+        }
+
+        $manager->reset_tour_for_all_users($maintourid);
+        if ($t2id !== null) {
+            $t2manager->reset_tour_for_all_users($t2id);
+        }
+    }
 
     /**
      * Build interactive steps for the minimalist scenario, split across three consecutive main tours.
