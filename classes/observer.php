@@ -153,7 +153,6 @@ final class observer
         $ismain = false;
         $issubtour = false;
         $ownedbyplugin = false;
-        $iscompasshub = false;
         $config = [];
         $courseid = 0;
 
@@ -171,7 +170,6 @@ final class observer
                     $config = $decoded;
                     $ownedbyplugin = !empty($config['local_adaptive_course_audit']) || !empty($config['local_adaptive_course_audit_action']);
                     $issubtour = !empty($config['local_adaptive_course_audit_action']);
-                    $iscompasshub = !empty($config['local_adaptive_course_audit_compass_hub']);
                     $courseid = (int)($config['local_adaptive_course_audit_courseid'] ?? 0);
                     $prevtourid = (int)($config['local_adaptive_course_audit_prev_tourid'] ?? 0);
                 }
@@ -198,16 +196,6 @@ final class observer
 
         $laststepindex = $totalsteps > 0 ? ($totalsteps - 1) : -1;
         $completed = ($laststepindex >= 0) && ($stepindex >= $laststepindex);
-
-        if ($ismain && $iscompasshub && !$completed) {
-            try {
-                $manager = new tour_manager();
-                $manager->reset_tour_for_all_users($tourid);
-            } catch (\Throwable $exception) {
-                debugging('Error resetting compass hub tour after early exit: ' . $exception->getMessage(), DEBUG_DEVELOPER);
-            }
-            return;
-        }
 
         if ($ismain) {
             self::queue_related_subtour_deletions($tourid);

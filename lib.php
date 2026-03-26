@@ -118,6 +118,7 @@ function local_adaptive_course_audit_extend_navigation_course(
     $ismodquizedit = (strpos((string)$PAGE->url->get_path(), '/mod/quiz/edit.php') !== false);
     $isdefaultcompletion = (strpos((string)$PAGE->url->get_path(), '/course/defaultcompletion.php') !== false);
     $isquestionedit = (strpos((string)$PAGE->url->get_path(), '/question/bank/editquestion/question.php') !== false);
+    $iseditsection = (strpos((string)$PAGE->url->get_path(), '/course/editsection.php') !== false);
     $hastour = false;
     $startacatour = false;
     $tour = null;
@@ -156,8 +157,9 @@ function local_adaptive_course_audit_extend_navigation_course(
     }
 
     //check in tourconfig if startacatour is set there
-    $shouldlaunch = ($acatourid > 0 || $startacatour) && ($iscourseview || $ismodedit || $ismodquizedit || $isdefaultcompletion || $isquestionedit);
-    $shouldexpandmodedit = $ismodedit && optional_param('acaexpand', 0, PARAM_INT) > 0;
+    $shouldlaunch = ($acatourid > 0 || $startacatour) &&
+        ($iscourseview || $ismodedit || $ismodquizedit || $isdefaultcompletion || $isquestionedit || $iseditsection);
+    $shouldexpandmodedit = ($ismodedit || $iseditsection) && optional_param('acaexpand', 0, PARAM_INT) > 0;
 
     // Load the JS tour launcher when the URL parameter is present.
     if ($shouldlaunch) {

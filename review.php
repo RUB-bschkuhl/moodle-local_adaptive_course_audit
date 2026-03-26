@@ -25,6 +25,12 @@ $action = optional_param('action', '', PARAM_ALPHANUMEXT);
 $sectionid = optional_param('sectionid', 0, PARAM_INT);
 $cmid = optional_param('cmid', 0, PARAM_INT);
 $teach = optional_param('teach', '', PARAM_ALPHANUMEXT);
+$sourcesectionid = optional_param('source_sectionid', 0, PARAM_INT);
+$targetsectionid = optional_param('target_sectionid', 0, PARAM_INT);
+$sourcecmid = optional_param('source_cmid', 0, PARAM_INT);
+$quizcmid = optional_param('quiz_cmid', 0, PARAM_INT);
+$feedbackcmid = optional_param('feedback_cmid', 0, PARAM_INT);
+$questionready = optional_param('question_ready', 0, PARAM_BOOL);
 $course = get_course($courseid);
 require_login($course);
 
@@ -120,18 +126,31 @@ if ($action === 'startscenario') {
     $scenario = required_param('scenario', PARAM_INT);
 
     try {
-        $scenarioresult = review_service::start_scenario_tour((int)$course->id, $scenario);
+        $scenarioresult = review_service::start_scenario_tour((int)$course->id, $scenario, [
+            'source_sectionid' => $sourcesectionid,
+            'target_sectionid' => $targetsectionid,
+            'source_cmid' => $sourcecmid,
+            'quiz_cmid' => $quizcmid,
+            'feedback_cmid' => $feedbackcmid,
+            'question_ready' => $questionready,
+        ]);
         if (!empty($scenarioresult['status'])) {
             // Turn on editing mode so the course edit UI (add section, activity picker) is visible.
             $USER->editing = 1;
+
+            if (!empty($scenarioresult['redirect']) && $scenarioresult['redirect'] instanceof moodle_url) {
+                $redirecturl = $scenarioresult['redirect'];
+                if (!empty($scenarioresult['tourid'])) {
+                    $redirecturl->param('startacatour', (int)$scenarioresult['tourid']);
+                }
+                redirect($redirecturl);
+            }
 
             $redirectparams = ['id' => $course->id];
             if (!empty($scenarioresult['tourid'])) {
                 $redirectparams['startacatour'] = (int)$scenarioresult['tourid'];
             }
-            redirect(
-                new moodle_url('/course/view.php', $redirectparams)
-            );
+            redirect(new moodle_url('/course/view.php', $redirectparams));
         }
 
         $failuremessage = !empty($scenarioresult['message'])

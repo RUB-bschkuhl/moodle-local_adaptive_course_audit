@@ -74,6 +74,8 @@ const expandRelevantFieldsets = () => {
         '[id^="fitem_id_feedbacktext"]',
         '#id_timeopen',
         '#id_quizpassword',
+        '#id_availabilityconditionsjson',
+        '#fitem_id_availabilityconditionsjson',
     ];
 
     selectors.forEach((selector) => {
