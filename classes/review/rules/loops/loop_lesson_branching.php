@@ -18,7 +18,6 @@ declare(strict_types=1);
 
 namespace local_adaptive_course_audit\review\rules\loops;
 
-defined('MOODLE_INTERNAL') || die();
 
 use local_adaptive_course_audit\review\rules\rule_base;
 
@@ -26,21 +25,23 @@ use local_adaptive_course_audit\review\rules\rule_base;
  * Loop rule: detect Lesson branching (conditional jumps based on answers).
  *
  * @package     local_adaptive_course_audit
+ * @copyright   2025 Bastian Schmidt-Kuhl <bastian.schmidt-kuhl@ruhr-uni-bochum.de>
+ * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class loop_lesson_branching extends rule_base {
     /** @var string Rule identifier. */
-    public const rule_key = 'loop_lesson_branching';
+    public const RULE_KEY = 'loop_lesson_branching';
 
     /** @var string Target type. */
-    public const target_type = 'section';
+    public const TARGET_TYPE = 'section';
 
     /**
      * Constructor.
      */
     public function __construct() {
         parent::__construct(
-            self::rule_key,
-            self::target_type,
+            self::RULE_KEY,
+            self::TARGET_TYPE,
             get_string('rule_loop_lesson_branching_name', 'local_adaptive_course_audit'),
             get_string('rule_loop_lesson_branching_description', 'local_adaptive_course_audit'),
             'hint'
@@ -66,7 +67,7 @@ class loop_lesson_branching extends rule_base {
             return null;
         }
 
-        $lessoncms = array_values(array_filter($modules, static function($cm) {
+        $lessoncms = array_values(array_filter($modules, static function ($cm) {
             return $cm->modname === 'lesson';
         }));
         if (empty($lessoncms)) {
@@ -98,7 +99,11 @@ class loop_lesson_branching extends rule_base {
             }
 
             if (empty($answers)) {
-                $messages[] = get_string('rule_loop_lesson_branching_lesson_no_answers', 'local_adaptive_course_audit', $lessoncm->name);
+                $messages[] = get_string(
+                    'rule_loop_lesson_branching_lesson_no_answers',
+                    'local_adaptive_course_audit',
+                    $lessoncm->name
+                );
                 continue;
             }
 
@@ -162,4 +167,3 @@ class loop_lesson_branching extends rule_base {
         return $visible;
     }
 }
-

@@ -14,17 +14,16 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-declare(strict_types=1);
-
 /**
  * Library callbacks for Adaptive course audit.
  *
  * @package     local_adaptive_course_audit
- * @copyright   2025 Moodle HQ
+ * @copyright   2025 Bastian Schmidt-Kuhl <bastian.schmidt-kuhl@ruhr-uni-bochum.de>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
+declare(strict_types=1);
+
 
 /**
  * Adds the Adaptive course audit link to the course secondary navigation.
@@ -156,7 +155,7 @@ function local_adaptive_course_audit_extend_navigation_course(
         debugging('Error checking adaptive course audit tour mapping: ' . $exception->getMessage(), DEBUG_DEVELOPER);
     }
 
-    //check in tourconfig if startacatour is set there
+    // Check in tourconfig if startacatour is set there.
     $shouldlaunch = ($acatourid > 0 || $startacatour) &&
         ($iscourseview || $ismodedit || $ismodquizedit || $isdefaultcompletion || $isquestionedit || $iseditsection);
     $shouldexpandmodedit = ($ismodedit || $iseditsection) && optional_param('acaexpand', 0, PARAM_INT) > 0;
@@ -171,6 +170,45 @@ function local_adaptive_course_audit_extend_navigation_course(
             );
         } catch (Throwable $exception) {
             debugging('Error loading adaptive course audit tour launcher: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+        }
+    }
+
+    // On modedit.php: stash a follow-up destination so the restriction tour
+    // starts automatically after Moodle's post-save redirect to the course view.
+    if ($ismodedit) {
+        $nextsectionid = optional_param('acanextsectionid', 0, PARAM_INT);
+        $nexttourid = optional_param('acanexttour', 0, PARAM_INT);
+        if ($nextsectionid > 0 && $nexttourid > 0) {
+            try {
+                if ($DB->record_exists('tool_usertours_tours', ['id' => $nexttourid])) {
+                    $PAGE->requires->js_call_amd(
+                        'local_adaptive_course_audit/tour_launcher',
+                        'stashAfterSave',
+                        [$nextsectionid, $nexttourid, (int)$course->id]
+                    );
+                }
+            } catch (Throwable $exception) {
+                debugging(
+                    'Error stashing adaptive course audit next-after-save target: ' . $exception->getMessage(),
+                    DEBUG_DEVELOPER
+                );
+            }
+        }
+    }
+
+    // On course view: consume any stashed next-after-save target and redirect.
+    if ($iscourseview) {
+        try {
+            $PAGE->requires->js_call_amd(
+                'local_adaptive_course_audit/tour_launcher',
+                'consumeAfterSave',
+                [(int)$course->id]
+            );
+        } catch (Throwable $exception) {
+            debugging(
+                'Error consuming adaptive course audit next-after-save target: ' . $exception->getMessage(),
+                DEBUG_DEVELOPER
+            );
         }
     }
 

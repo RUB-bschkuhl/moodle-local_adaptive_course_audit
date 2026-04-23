@@ -18,7 +18,6 @@ declare(strict_types=1);
 
 namespace local_adaptive_course_audit\review\rules\loops;
 
-defined('MOODLE_INTERNAL') || die();
 
 use local_adaptive_course_audit\review\rules\rule_base;
 use tool_usertours\target;
@@ -31,21 +30,23 @@ use tool_usertours\target;
  * and itemid = quiz_slots.id.
  *
  * @package     local_adaptive_course_audit
+ * @copyright   2025 Bastian Schmidt-Kuhl <bastian.schmidt-kuhl@ruhr-uni-bochum.de>
+ * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class loop_quiz_random_questions extends rule_base {
     /** @var string Rule identifier. */
-    public const rule_key = 'loop_quiz_random_questions';
+    public const RULE_KEY = 'loop_quiz_random_questions';
 
     /** @var string Target type. */
-    public const target_type = 'section';
+    public const TARGET_TYPE = 'section';
 
     /**
      * Constructor.
      */
     public function __construct() {
         parent::__construct(
-            self::rule_key,
-            self::target_type,
+            self::RULE_KEY,
+            self::TARGET_TYPE,
             get_string('rule_loop_quiz_random_questions_name', 'local_adaptive_course_audit'),
             get_string('rule_loop_quiz_random_questions_description', 'local_adaptive_course_audit'),
             'hint'
@@ -71,7 +72,7 @@ class loop_quiz_random_questions extends rule_base {
             return null;
         }
 
-        $quizcms = array_values(array_filter($modules, static function($cm) {
+        $quizcms = array_values(array_filter($modules, static function ($cm) {
             return $cm->modname === 'quiz';
         }));
         if (empty($quizcms)) {
@@ -133,8 +134,14 @@ class loop_quiz_random_questions extends rule_base {
                         'pathmatch' => $pathmatch,
                         'steps' => [
                             [
-                                'title' => get_string('actiontour_quizrandomquestions_step_add_title', 'local_adaptive_course_audit'),
-                                'content' => get_string('actiontour_quizrandomquestions_step_add_body', 'local_adaptive_course_audit'),
+                                'title' => get_string(
+                                    'actiontour_quizrandomquestions_step_add_title',
+                                    'local_adaptive_course_audit'
+                                ),
+                                'content' => get_string(
+                                    'actiontour_quizrandomquestions_step_add_body',
+                                    'local_adaptive_course_audit'
+                                ),
                                 'targettype' => (string)target::TARGET_SELECTOR,
                                 'targetvalue' => '.last-add-menu a',
                                 'config' => [
@@ -180,4 +187,3 @@ class loop_quiz_random_questions extends rule_base {
         return $visible;
     }
 }
-

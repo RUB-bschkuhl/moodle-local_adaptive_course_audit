@@ -18,19 +18,20 @@ declare(strict_types=1);
 
 namespace local_adaptive_course_audit\review\rules;
 
-defined('MOODLE_INTERNAL') || die();
 
 /**
  * Minimal module classifier for adaptive audit rules.
  *
  * @package     local_adaptive_course_audit
+ * @copyright   2025 Bastian Schmidt-Kuhl <bastian.schmidt-kuhl@ruhr-uni-bochum.de>
+ * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class mod_classifier {
     /** @var string Knowledge building modules constant. */
     public const MOD_WISSENSAUFBAU = 'wissensaufbau';
 
     /** @var array Module types classified as knowledge building. */
-    private static $wissensaufbau_modules = [
+    private static $wissensaufbaumodules = [
         'book',
         'page',
         'resource',
@@ -67,7 +68,6 @@ class mod_classifier {
             return false;
         }
 
-        return in_array($modtype, self::$wissensaufbau_modules, true);
+        return in_array($modtype, self::$wissensaufbaumodules, true);
     }
 }
-

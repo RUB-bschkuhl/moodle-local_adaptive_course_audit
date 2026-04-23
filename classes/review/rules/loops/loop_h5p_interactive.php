@@ -18,7 +18,6 @@ declare(strict_types=1);
 
 namespace local_adaptive_course_audit\review\rules\loops;
 
-defined('MOODLE_INTERNAL') || die();
 
 use local_adaptive_course_audit\review\rules\rule_base;
 use tool_usertours\target;
@@ -30,21 +29,23 @@ use tool_usertours\target;
  * to identify specific content types like Branching Scenario).
  *
  * @package     local_adaptive_course_audit
+ * @copyright   2025 Bastian Schmidt-Kuhl <bastian.schmidt-kuhl@ruhr-uni-bochum.de>
+ * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class loop_h5p_interactive extends rule_base {
     /** @var string Rule identifier. */
-    public const rule_key = 'loop_h5p_interactive';
+    public const RULE_KEY = 'loop_h5p_interactive';
 
     /** @var string Target type. */
-    public const target_type = 'section';
+    public const TARGET_TYPE = 'section';
 
     /**
      * Constructor.
      */
     public function __construct() {
         parent::__construct(
-            self::rule_key,
-            self::target_type,
+            self::RULE_KEY,
+            self::TARGET_TYPE,
             get_string('rule_loop_h5p_interactive_name', 'local_adaptive_course_audit'),
             get_string('rule_loop_h5p_interactive_description', 'local_adaptive_course_audit'),
             'hint'
@@ -68,7 +69,7 @@ class loop_h5p_interactive extends rule_base {
             return null;
         }
 
-        $h5pcms = array_values(array_filter($modules, static function($cm) {
+        $h5pcms = array_values(array_filter($modules, static function ($cm) {
             return $cm->modname === 'h5pactivity';
         }));
 
@@ -79,7 +80,7 @@ class loop_h5p_interactive extends rule_base {
         $status = !empty($h5pcms);
 
         if ($status) {
-            $names = array_map(static function($cm) {
+            $names = array_map(static function ($cm) {
                 return $cm->name;
             }, $h5pcms);
             $messages[] = get_string('rule_loop_h5p_interactive_found', 'local_adaptive_course_audit', implode(', ', $names));
@@ -94,7 +95,8 @@ class loop_h5p_interactive extends rule_base {
                 'sr' => 0,
                 'sesskey' => sesskey(),
             ]);
-            $pathmatch = '/course/modedit.php%add=h5pactivity%section=' . (int)$target->section . '%course=' . (int)$course->id . '%';
+            $pathmatch = '/course/modedit.php%add=h5pactivity%section='
+                . (int)$target->section . '%course=' . (int)$course->id . '%';
 
             $actions[] = [
                 'label' => get_string('touraction_add_h5p', 'local_adaptive_course_audit'),
@@ -151,4 +153,3 @@ class loop_h5p_interactive extends rule_base {
         return $visible;
     }
 }
-

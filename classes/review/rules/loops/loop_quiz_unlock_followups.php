@@ -18,7 +18,6 @@ declare(strict_types=1);
 
 namespace local_adaptive_course_audit\review\rules\loops;
 
-defined('MOODLE_INTERNAL') || die();
 
 use local_adaptive_course_audit\review\rules\mod_classifier;
 use local_adaptive_course_audit\review\rules\rule_base;
@@ -28,21 +27,23 @@ use tool_usertours\target;
  * Quiz unlock follow-ups rule: checks for knowledge building -> quiz -> dependent follow-ups.
  *
  * @package     local_adaptive_course_audit
+ * @copyright   2025 Bastian Schmidt-Kuhl <bastian.schmidt-kuhl@ruhr-uni-bochum.de>
+ * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class loop_quiz_unlock_followups extends rule_base {
     /** @var string Rule identifier. */
-    public const rule_key = 'loop_quiz_unlock_followups';
+    public const RULE_KEY = 'loop_quiz_unlock_followups';
 
     /** @var string Target type. */
-    public const target_type = 'section';
+    public const TARGET_TYPE = 'section';
 
     /**
      * Constructor.
      */
     public function __construct() {
         parent::__construct(
-            self::rule_key,
-            self::target_type,
+            self::RULE_KEY,
+            self::TARGET_TYPE,
             get_string('rule_loop_quiz_unlock_followups_name', 'local_adaptive_course_audit'),
             get_string('rule_loop_quiz_unlock_followups_description', 'local_adaptive_course_audit'),
             'hint'
@@ -65,7 +66,7 @@ class loop_quiz_unlock_followups extends rule_base {
 
         $modules = $this->get_visible_modules($target);
 
-        //Regel minimale Items in Section.
+        // Regel minimale Items in Section.
         if (count($modules) < 3) {
             return $this->create_result(
                 false,
@@ -84,7 +85,7 @@ class loop_quiz_unlock_followups extends rule_base {
             return $cm->modname === 'quiz';
         });
 
-        //Regel missing quiz in Section.
+        // Regel missing quiz in Section.
         if (empty($quizzes)) {
             $addquizurl = new \moodle_url('/course/modedit.php', [
                 'add' => 'quiz',
@@ -95,7 +96,8 @@ class loop_quiz_unlock_followups extends rule_base {
                 'sesskey' => sesskey(),
             ]);
             // Pathmatch uses wildcard before params since Moodle may add sr/return params first.
-            $addquizpathmatch = '/course/modedit.php%add=quiz%section=' . (int)$target->section . '%course=' . (int)$course->id . '%';
+            $addquizpathmatch = '/course/modedit.php%add=quiz%section='
+                . (int)$target->section . '%course=' . (int)$course->id . '%';
             $actions = [
                 [
                     'label' => get_string('touraction_add_quiz', 'local_adaptive_course_audit'),
@@ -106,8 +108,14 @@ class loop_quiz_unlock_followups extends rule_base {
                         'pathmatch' => $addquizpathmatch,
                         'steps' => [
                             [
-                                'title' => get_string('actiontour_loop_quiz_unlock_followups_addquiz_step_name_title', 'local_adaptive_course_audit'),
-                                'content' => get_string('actiontour_loop_quiz_unlock_followups_addquiz_step_name_body', 'local_adaptive_course_audit'),
+                                'title' => get_string(
+                                    'actiontour_loop_quiz_unlock_followups_addquiz_step_name_title',
+                                    'local_adaptive_course_audit'
+                                ),
+                                'content' => get_string(
+                                    'actiontour_loop_quiz_unlock_followups_addquiz_step_name_body',
+                                    'local_adaptive_course_audit'
+                                ),
                                 'targettype' => (string)target::TARGET_SELECTOR,
                                 'targetvalue' => '#id_name',
                                 'config' => [
@@ -116,8 +124,14 @@ class loop_quiz_unlock_followups extends rule_base {
                                 ],
                             ],
                             [
-                                'title' => get_string('actiontour_loop_quiz_unlock_followups_addquiz_step_completion_title', 'local_adaptive_course_audit'),
-                                'content' => get_string('actiontour_loop_quiz_unlock_followups_addquiz_step_completion_body', 'local_adaptive_course_audit'),
+                                'title' => get_string(
+                                    'actiontour_loop_quiz_unlock_followups_addquiz_step_completion_title',
+                                    'local_adaptive_course_audit'
+                                ),
+                                'content' => get_string(
+                                    'actiontour_loop_quiz_unlock_followups_addquiz_step_completion_body',
+                                    'local_adaptive_course_audit'
+                                ),
                                 'targettype' => (string)target::TARGET_SELECTOR,
                                 'targetvalue' => 'fieldset#id_activitycompletionheader',
                                 'config' => [
@@ -126,8 +140,14 @@ class loop_quiz_unlock_followups extends rule_base {
                                 ],
                             ],
                             [
-                                'title' => get_string('actiontour_loop_quiz_unlock_followups_addquiz_step_access_title', 'local_adaptive_course_audit'),
-                                'content' => get_string('actiontour_loop_quiz_unlock_followups_addquiz_step_access_body', 'local_adaptive_course_audit'),
+                                'title' => get_string(
+                                    'actiontour_loop_quiz_unlock_followups_addquiz_step_access_title',
+                                    'local_adaptive_course_audit'
+                                ),
+                                'content' => get_string(
+                                    'actiontour_loop_quiz_unlock_followups_addquiz_step_access_body',
+                                    'local_adaptive_course_audit'
+                                ),
                                 'targettype' => (string)target::TARGET_SELECTOR,
                                 'targetvalue' => 'fieldset#id_availabilityconditionsheader',
                                 'config' => [
@@ -160,7 +180,7 @@ class loop_quiz_unlock_followups extends rule_base {
             return mod_classifier::is_module_in_category($cm->modname, mod_classifier::MOD_WISSENSAUFBAU);
         });
 
-        //Regel missing knowledge building in Section.
+        // Regel missing knowledge building in Section.
         if (empty($knowledgebuilding)) {
             return $this->create_result(
                 false,
@@ -199,8 +219,14 @@ class loop_quiz_unlock_followups extends rule_base {
                         'pathmatch' => $editquizpathmatch,
                         'steps' => [
                             [
-                                'title' => get_string('actiontour_loop_quiz_unlock_followups_editquiz_step_access_title', 'local_adaptive_course_audit'),
-                                'content' => get_string('actiontour_loop_quiz_unlock_followups_editquiz_step_access_body', 'local_adaptive_course_audit'),
+                                'title' => get_string(
+                                    'actiontour_loop_quiz_unlock_followups_editquiz_step_access_title',
+                                    'local_adaptive_course_audit'
+                                ),
+                                'content' => get_string(
+                                    'actiontour_loop_quiz_unlock_followups_editquiz_step_access_body',
+                                    'local_adaptive_course_audit'
+                                ),
                                 'targettype' => (string)target::TARGET_SELECTOR,
                                 'targetvalue' => 'fieldset#id_availabilityconditionsheader',
                                 'config' => [
@@ -209,8 +235,14 @@ class loop_quiz_unlock_followups extends rule_base {
                                 ],
                             ],
                             [
-                                'title' => get_string('actiontour_loop_quiz_unlock_followups_editquiz_step_completion_title', 'local_adaptive_course_audit'),
-                                'content' => get_string('actiontour_loop_quiz_unlock_followups_editquiz_step_completion_body', 'local_adaptive_course_audit'),
+                                'title' => get_string(
+                                    'actiontour_loop_quiz_unlock_followups_editquiz_step_completion_title',
+                                    'local_adaptive_course_audit'
+                                ),
+                                'content' => get_string(
+                                    'actiontour_loop_quiz_unlock_followups_editquiz_step_completion_body',
+                                    'local_adaptive_course_audit'
+                                ),
                                 'targettype' => (string)target::TARGET_SELECTOR,
                                 'targetvalue' => 'fieldset#id_activitycompletionheader',
                                 'config' => [
@@ -362,4 +394,3 @@ class loop_quiz_unlock_followups extends rule_base {
         return false;
     }
 }
-

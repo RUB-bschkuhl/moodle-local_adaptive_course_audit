@@ -18,8 +18,6 @@ declare(strict_types=1);
 
 namespace local_adaptive_course_audit\review;
 
-defined('MOODLE_INTERNAL') || die();
-
 use context_course;
 use local_adaptive_course_audit\review\rules\loops\loop_branch_by_grade;
 use local_adaptive_course_audit\review\rules\loops\loop_course_filter_activitynames_autolinking;
@@ -34,18 +32,20 @@ use local_adaptive_course_audit\tour\manager as tour_manager;
 use html_writer;
 use moodle_exception;
 use tool_usertours\target;
-
-
 use tool_usertours\tour;
 
 /**
  * Review orchestration service.
  *
  * @package     local_adaptive_course_audit
+ * @copyright   2025 Bastian Schmidt-Kuhl <bastian.schmidt-kuhl@ruhr-uni-bochum.de>
+ * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 final class service
 {
+    /** @var string Table storing plugin-owned tour mappings. */
     private const TOUR_TABLE = 'local_adaptive_course_tour';
+    /** @var string Table storing review audit results per course. */
     private const REVIEW_TABLE = 'local_adaptive_course_review';
 
     /** @var string Teach tour key: combined quiz guided help. */
@@ -67,8 +67,7 @@ final class service
      * @param string $text
      * @return string
      */
-    private static function format_plain_text_as_html(string $text): string
-    {
+    private static function format_plain_text_as_html(string $text): string {
         $text = trim($text);
         if ($text === '') {
             return '';
@@ -99,8 +98,7 @@ final class service
      * @param context_course|null $context
      * @return string
      */
-    private static function format_rationale_block(string $rationale, ?context_course $context = null): string
-    {
+    private static function format_rationale_block(string $rationale, ?context_course $context = null): string {
         $rationale = trim($rationale);
         if ($rationale === '') {
             return '';
@@ -143,8 +141,7 @@ final class service
      * @param context_course $context
      * @return string
      */
-    private static function format_action_tour_step_content(string $content, context_course $context): string
-    {
+    private static function format_action_tour_step_content(string $content, context_course $context): string {
         $content = trim($content);
         if ($content === '') {
             return '';
@@ -167,8 +164,7 @@ final class service
      * @param int|null $sectionid Optional section id to scope the review.
      * @return array
      */
-    public static function start_review(int $courseid, ?int $sectionid = null): array
-    {
+    public static function start_review(int $courseid, ?int $sectionid = null): array {
         global $DB;
         global $USER;
 
@@ -177,7 +173,6 @@ final class service
         if (!$context) {
             throw new moodle_exception('invalidcourseid');
         }
-        /** @var \context $context */
 
         require_capability('moodle/course:manageactivities', $context);
 
@@ -247,8 +242,7 @@ final class service
      * @param int|null $sectionid
      * @return void
      */
-    private static function store_latest_audit_review_start(int $courseid, int $userid, ?int $sectionid): void
-    {
+    private static function store_latest_audit_review_start(int $courseid, int $userid, ?int $sectionid): void {
         global $DB;
 
         if ($courseid <= 0 || $userid <= 0) {
@@ -314,8 +308,7 @@ final class service
      * @param string $teachkey
      * @return array Array with status, redirect URL and optional message.
      */
-    public static function start_teach_tour(int $courseid, int $cmid, string $teachkey): array
-    {
+    public static function start_teach_tour(int $courseid, int $cmid, string $teachkey): array {
         $teachkey = trim($teachkey);
         if ($courseid <= 0 || $cmid <= 0 || $teachkey === '') {
             return [
@@ -329,7 +322,6 @@ final class service
         if (!$context) {
             throw new moodle_exception('invalidcourseid');
         }
-        /** @var \context $context */
 
         /** @var context_course $coursecontext */
         $coursecontext = $context;
@@ -399,13 +391,15 @@ final class service
         $pathmatch = '/__aca_noop__';
 
         // Merge legacy per-topic teach keys into the combined tour.
-        if (in_array($teachkey, [
+        if (
+            in_array($teachkey, [
             self::TEACH_KEY_QUIZ_BEHAVIOUR,
             self::TEACH_KEY_QUIZ_FEEDBACK,
             self::TEACH_KEY_QUIZ_REVIEW_OPTIONS,
             self::TEACH_KEY_QUIZ_GRADING,
             self::TEACH_KEY_QUIZ_TIMING_SECURITY,
-        ], true)) {
+            ], true)
+        ) {
             $teachkey = self::TEACH_KEY_QUIZ_GUIDED_HELP;
         }
 
@@ -487,8 +481,7 @@ final class service
      * @param string $quizname
      * @return array[]
      */
-    private static function build_teach_tour_steps(string $teachkey, string $quizname): array
-    {
+    private static function build_teach_tour_steps(string $teachkey, string $quizname): array {
         $commonconfig = [
             'placement' => 'right',
             'backdrop' => true,
@@ -515,7 +508,7 @@ final class service
                     'title' => get_string('actiontour_quizcompletion_step_completion_title', 'local_adaptive_course_audit'),
                     'content' => get_string('actiontour_quizcompletion_step_completion_body', 'local_adaptive_course_audit'),
                     'targettype' => (string)target::TARGET_SELECTOR,
-                    'targetvalue' => '#id_completion_2', 
+                    'targetvalue' => '#id_completion_2',
                     'config' => $commonconfig,
                 ],
                 [
@@ -568,8 +561,7 @@ final class service
      * @param string $key
      * @return void
      */
-    private static function delete_existing_action_tour_by_key(int $courseid, string $key): void
-    {
+    private static function delete_existing_action_tour_by_key(int $courseid, string $key): void {
         global $DB;
 
         $records = [];
@@ -618,8 +610,7 @@ final class service
      * @param tour_manager $manager
      * @return void
      */
-    private static function delete_existing_tour(int $courseid, tour_manager $manager): void
-    {
+    private static function delete_existing_tour(int $courseid, tour_manager $manager): void {
         global $DB;
 
         // Fetch all mapped tours for this course (minimalist scenario creates multiple: T1, T2, T3).
@@ -650,8 +641,7 @@ final class service
      * @param tour_manager $manager
      * @return void
      */
-    private static function delete_orphaned_scenario_tours(int $courseid, tour_manager $manager): void
-    {
+    private static function delete_orphaned_scenario_tours(int $courseid, tour_manager $manager): void {
         global $DB;
 
         try {
@@ -692,8 +682,7 @@ final class service
      * @param int $tourid
      * @return void
      */
-    private static function store_tour_mapping(int $courseid, int $tourid): void
-    {
+    private static function store_tour_mapping(int $courseid, int $tourid): void {
         global $DB;
 
         $record = (object)[
@@ -713,8 +702,7 @@ final class service
      * @param int|null $sectionid Optional section id to scope the checks.
      * @return array Results from executed loops.
      */
-    private static function run_loop_checks(int $courseid, ?int $sectionid = null): array
-    {
+    private static function run_loop_checks(int $courseid, ?int $sectionid = null): array {
         $modinfo = get_fast_modinfo($courseid);
         $course = $modinfo->get_course();
         $sections = $modinfo->get_section_info_all();
@@ -745,8 +733,8 @@ final class service
             new loop_quiz_adaptive_behaviour(),
             new loop_quiz_random_questions(),
             new loop_lesson_branching(),
-            //  new loop_h5p_interactive(),
-            //  new loop_diagnostic_checkpoint(),
+            // Disabled: new loop_h5p_interactive().
+            // Disabled: new loop_diagnostic_checkpoint().
         ];
 
         foreach ($sections as $sectioninfo) {
@@ -817,8 +805,7 @@ final class service
      * @param array $actiontourmap Map of action tour keys to tour IDs, used to inject startacatour URL params.
      * @return void
      */
-    private static function add_loop_results_as_steps(tour_manager $manager, array $results, array $actiontourmap = []): void
-    {
+    private static function add_loop_results_as_steps(tour_manager $manager, array $results, array $actiontourmap = []): void {
         foreach ($results as $result) {
             // For now, exclude "success" results (i.e. when the user already implemented the recommendation).
             // We keep the underlying rule + strings intact so we can re-enable these steps later if desired.
@@ -969,8 +956,7 @@ final class service
      * @param array $options Additional scenario state carried across redirects.
      * @return array Array with status and optional message.
      */
-    public static function start_scenario_tour(int $courseid, int $scenario, array $options = []): array
-    {
+    public static function start_scenario_tour(int $courseid, int $scenario, array $options = []): array {
         global $DB;
 
         $allowedscenarios = [self::SCENARIO_MINIMALIST, self::SCENARIO_SEQUENTIAL, self::SCENARIO_COMPASS];
@@ -986,7 +972,6 @@ final class service
         if (!$context) {
             throw new moodle_exception('invalidcourseid');
         }
-        /** @var \context $context */
 
         require_capability('moodle/course:manageactivities', $context);
 
@@ -1009,13 +994,25 @@ final class service
             'local_adaptive_course_audit_courseid' => (int)$course->id,
         ];
 
+        // Only show the "How to use the scenario tour" intro on the very first iteration of a scenario.
+        // Any follow-up call (source/target section picked, activity picked, quiz/feedback cmid supplied, …)
+        // means the user is mid-flow and has already seen the intro on the first pass.
+        $isfirstiteration = (
+            (int)($options['source_sectionid'] ?? 0) <= 0
+            && (int)($options['target_sectionid'] ?? 0) <= 0
+            && (int)($options['source_cmid'] ?? 0) <= 0
+            && (int)($options['quiz_cmid'] ?? 0) <= 0
+            && (int)($options['feedback_cmid'] ?? 0) <= 0
+            && empty($options['question_ready'])
+        );
+
         try {
             $tour = $manager->create_tour(
                 $tourname,
                 $tourdescription,
                 $pathmatch,
                 $tourconfig,
-                true,
+                $isfirstiteration,
                 get_string('tourintro_scenario_title', 'local_adaptive_course_audit'),
                 get_string('tourintro_scenario_content', 'local_adaptive_course_audit')
             );
@@ -1090,8 +1087,7 @@ final class service
      * @param int $scenario
      * @return array[]
      */
-    private static function build_scenario_steps(int $scenario): array
-    {
+    private static function build_scenario_steps(int $scenario): array {
         $commonconfig = [
             'placement' => 'right',
             'orphan' => true,
@@ -1120,8 +1116,7 @@ final class service
      * @param int $courseid
      * @return \cm_info|null
      */
-    private static function find_first_quiz_cm(int $courseid): ?\cm_info
-    {
+    private static function find_first_quiz_cm(int $courseid): ?\cm_info {
         $modinfo = get_fast_modinfo($courseid);
         foreach ($modinfo->get_cms() as $cm) {
             if (!empty($cm->modname) && $cm->modname === 'quiz') {
@@ -1139,8 +1134,7 @@ final class service
      * @param \cm_info|null $quizcm
      * @return \stdClass|null
      */
-    private static function get_default_question_category(int $courseid, ?\cm_info $quizcm = null): ?\stdClass
-    {
+    private static function get_default_question_category(int $courseid, ?\cm_info $quizcm = null): ?\stdClass {
         global $CFG;
 
         require_once($CFG->dirroot . '/question/editlib.php');
@@ -1179,8 +1173,7 @@ final class service
      * @param array $params
      * @return \moodle_url
      */
-    private static function build_scenario_review_url(int $courseid, int $scenario, array $params = []): \moodle_url
-    {
+    private static function build_scenario_review_url(int $courseid, int $scenario, array $params = []): \moodle_url {
         $baseparams = [
             'courseid' => $courseid,
             'action' => 'startscenario',
@@ -1197,8 +1190,7 @@ final class service
      * @param int $courseid
      * @return \section_info[]
      */
-    private static function get_selectable_sections(int $courseid): array
-    {
+    private static function get_selectable_sections(int $courseid): array {
         $modinfo = get_fast_modinfo($courseid);
         $course = $modinfo->get_course();
         $sections = [];
@@ -1429,8 +1421,7 @@ final class service
         int $courseid,
         int $maintourid,
         array $options = []
-    ): array
-    {
+    ): array {
         global $DB;
 
         $commonconfig = [
@@ -1466,9 +1457,7 @@ final class service
                     array_merge($actiontourconfig, [
                         'local_adaptive_course_audit_key' => 'compass_quiz_setup_' . $courseid,
                     ]),
-                    true,
-                    get_string('compass_quiz_tour_intro_title', 'local_adaptive_course_audit'),
-                    get_string('compass_quiz_tour_intro_content', 'local_adaptive_course_audit')
+                    false
                 );
                 $quizmanager->add_step(
                     get_string('compass_quiz_step1_title', 'local_adaptive_course_audit'),
@@ -1560,15 +1549,13 @@ final class service
                     array_merge($actiontourconfig, [
                         'local_adaptive_course_audit_key' => 'compass_question_editor_' . $courseid . '_' . $quizcmid,
                     ]),
-                    true,
-                    get_string('compass_feedback_tour_intro_title', 'local_adaptive_course_audit'),
-                    get_string('compass_feedback_tour_intro_content', 'local_adaptive_course_audit')
+                    false
                 );
                 $questionmanager->add_step(
                     get_string('compass_feedback_step1_title', 'local_adaptive_course_audit'),
                     get_string('compass_feedback_step1_content', 'local_adaptive_course_audit'),
                     (string)target::TARGET_SELECTOR,
-                    'form.mform[data-qtype], #fitem_id_questiontext',
+                    '#fitem_id_questiontext, #id_questiontext_editor, [id^="fitem_id_questiontext"]',
                     $commonconfig
                 );
                 $questionmanager->add_step(
@@ -1624,7 +1611,7 @@ final class service
                         array_merge($actiontourconfig, [
                             'local_adaptive_course_audit_key' => 'compass_question_gateway_' . $courseid . '_' . $quizcmid,
                         ]),
-                        true,
+                        false,
                         get_string('compass_feedback_gateway_tour_intro_title', 'local_adaptive_course_audit'),
                         get_string('compass_feedback_gateway_tour_intro_content', 'local_adaptive_course_audit')
                     );
@@ -1654,7 +1641,10 @@ final class service
                 $manager->delete_tour($maintourid);
                 $DB->delete_records(self::TOUR_TABLE, ['tourid' => $maintourid]);
             } catch (\Throwable $exception) {
-                debugging('Error deleting scenario 3 staging hub before quiz edit redirect: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+                debugging(
+                    'Error deleting scenario 3 staging hub before quiz edit redirect: ' . $exception->getMessage(),
+                    DEBUG_DEVELOPER
+                );
             }
 
             return [
@@ -1675,7 +1665,7 @@ final class service
                     array_merge($actiontourconfig, [
                         'local_adaptive_course_audit_key' => 'compass_feedback_page_' . $courseid,
                     ]),
-                    true,
+                    false,
                     get_string('compass_orientation_tour_intro_title', 'local_adaptive_course_audit'),
                     get_string('compass_orientation_tour_intro_content', 'local_adaptive_course_audit')
                 );
@@ -1780,9 +1770,10 @@ final class service
                 get_string('scenario_3_repeat_tour_content', 'local_adaptive_course_audit'),
                 '/__aca_noop__',
                 array_merge($actiontourconfig, [
-                    'local_adaptive_course_audit_key' => 'scenario3_repeat_' . $courseid . '_' . $feedbackcmid . '_' . $targetsectionid,
+                    'local_adaptive_course_audit_key' => 'scenario3_repeat_'
+                        . $courseid . '_' . $feedbackcmid . '_' . $targetsectionid,
                 ]),
-                true,
+                false,
                 get_string('scenario_3_repeat_tour_title', 'local_adaptive_course_audit'),
                 get_string('scenario_3_repeat_tour_content', 'local_adaptive_course_audit')
             );
@@ -1823,7 +1814,7 @@ final class service
                 array_merge($actiontourconfig, [
                     'local_adaptive_course_audit_key' => 'scenario3_restrict_' . $courseid . '_' . $targetsectionid,
                 ]),
-                true,
+                false,
                 get_string('scenario_3_restriction_tour_title', 'local_adaptive_course_audit'),
                 get_string('scenario_3_restriction_tour_content', 'local_adaptive_course_audit')
             );
@@ -1850,20 +1841,6 @@ final class service
         $completiontourid = null;
         try {
             $completionmanager = new tour_manager();
-            $restrictionbuttonhtml = '';
-            if ($restrictiontourid !== null) {
-                $restricturl = new \moodle_url('/course/editsection.php', [
-                    'id' => $targetsectionid,
-                    'startacatour' => $restrictiontourid,
-                    'acaexpand' => 1,
-                ]);
-                $restrictbutton = html_writer::link(
-                    $restricturl->out(false),
-                    s(get_string('scenario_3_completion_step2_button', 'local_adaptive_course_audit')),
-                    ['class' => 'btn btn-primary']
-                );
-                $restrictionbuttonhtml = html_writer::div($restrictbutton, 'local-adaptive-course-audit-step-actions');
-            }
 
             $completiontour = $completionmanager->create_tour(
                 get_string('scenario_3_completion_tour_title', 'local_adaptive_course_audit'),
@@ -1872,7 +1849,7 @@ final class service
                 array_merge($actiontourconfig, [
                     'local_adaptive_course_audit_key' => 'scenario3_completion_' . $courseid . '_' . $feedbackcmid,
                 ]),
-                true,
+                false,
                 get_string('scenario_3_completion_tour_title', 'local_adaptive_course_audit'),
                 get_string('scenario_3_completion_tour_content', 'local_adaptive_course_audit')
             );
@@ -1885,7 +1862,7 @@ final class service
             );
             $completionmanager->add_step(
                 get_string('scenario_3_completion_step2_title', 'local_adaptive_course_audit'),
-                get_string('scenario_3_completion_step2_content', 'local_adaptive_course_audit') . $restrictionbuttonhtml,
+                get_string('scenario_3_completion_step2_content', 'local_adaptive_course_audit'),
                 (string)target::TARGET_SELECTOR,
                 '#id_submitbutton, #id_submitbutton2',
                 $commonconfig
@@ -1903,16 +1880,22 @@ final class service
             debugging('Error deleting scenario 3 staging hub before redirect: ' . $exception->getMessage(), DEBUG_DEVELOPER);
         }
 
+        $redirectparams = [
+            'update' => $feedbackcmid,
+            'return' => 0,
+            'sr' => 0,
+            'sesskey' => sesskey(),
+            'acaexpand' => 1,
+        ];
+        if ($restrictiontourid !== null && $targetsectionid > 0) {
+            $redirectparams['acanextsectionid'] = $targetsectionid;
+            $redirectparams['acanexttour'] = $restrictiontourid;
+        }
+
         return [
             'status' => true,
             'tourid' => $completiontourid,
-            'redirect' => new \moodle_url('/course/modedit.php', [
-                'update' => $feedbackcmid,
-                'return' => 0,
-                'sr' => 0,
-                'sesskey' => sesskey(),
-                'acaexpand' => 1,
-            ]),
+            'redirect' => new \moodle_url('/course/modedit.php', $redirectparams),
         ];
     }
 
@@ -1934,8 +1917,7 @@ final class service
         int $courseid,
         int $maintourid,
         array $options = []
-    ): array
-    {
+    ): array {
         global $DB;
 
         $commonconfig = [
@@ -2041,9 +2023,10 @@ final class service
                 get_string('scenario_2_repeat_tour_content', 'local_adaptive_course_audit'),
                 '/__aca_noop__',
                 array_merge($actiontourconfig, [
-                    'local_adaptive_course_audit_key' => 'scenario2_repeat_' . $courseid . '_' . $sourcesectionid . '_' . $targetsectionid,
+                    'local_adaptive_course_audit_key' => 'scenario2_repeat_'
+                        . $courseid . '_' . $sourcesectionid . '_' . $targetsectionid,
                 ]),
-                true,
+                false,
                 get_string('scenario_2_repeat_tour_title', 'local_adaptive_course_audit'),
                 get_string('scenario_2_repeat_tour_content', 'local_adaptive_course_audit')
             );
@@ -2084,7 +2067,7 @@ final class service
                 array_merge($actiontourconfig, [
                     'local_adaptive_course_audit_key' => 'scenario2_restrict_' . $courseid . '_' . $targetsectionid,
                 ]),
-                true,
+                false,
                 get_string('scenario_2_restriction_tour_title', 'local_adaptive_course_audit'),
                 get_string('scenario_2_restriction_tour_content', 'local_adaptive_course_audit')
             );
@@ -2133,7 +2116,7 @@ final class service
                 array_merge($actiontourconfig, [
                     'local_adaptive_course_audit_key' => 'scenario2_completion_' . $courseid . '_' . $sourcecmid,
                 ]),
-                true,
+                false,
                 get_string('scenario_2_completion_tour_title', 'local_adaptive_course_audit'),
                 get_string('scenario_2_completion_tour_content', 'local_adaptive_course_audit')
             );
@@ -2199,8 +2182,7 @@ final class service
      * @param int $maintourid ID of T1 (passed so Subtour A can store it as its prev_tourid).
      * @return void
      */
-    private static function build_minimalist_interactive_steps(tour_manager $manager, int $courseid, int $maintourid): void
-    {
+    private static function build_minimalist_interactive_steps(tour_manager $manager, int $courseid, int $maintourid): void {
         $commonconfig = [
             'placement' => 'right',
             'orphan' => true,
@@ -2233,16 +2215,14 @@ final class service
             'local_adaptive_course_audit_scenario' => self::SCENARIO_MINIMALIST,
             'local_adaptive_course_audit_courseid' => $courseid,
             'local_adaptive_course_audit_prev_tourid' => $maintourid,
-            'startacatour' => true,   // auto-start on course view
+            'startacatour' => true, // Auto-start on course view.
         ];
-        // -------------------------------------------------------------------------
         // Subtour A: Page creation — linked to T1 via prev_tourid.
         // When Subtour A ends, the observer will delete T1, unblocking T2.
-        // -------------------------------------------------------------------------
-        $subtourAId = null;
+        $subtouraid = null;
         try {
-            $pageManager = new tour_manager();
-            $pageTour = $pageManager->create_tour(
+            $pagemanager = new tour_manager();
+            $pagetour = $pagemanager->create_tour(
                 get_string('minimalist_page_tour_intro_title', 'local_adaptive_course_audit'),
                 get_string('minimalist_page_tour_intro_content', 'local_adaptive_course_audit'),
                 '/__aca_noop__',
@@ -2250,128 +2230,122 @@ final class service
                     'local_adaptive_course_audit_key' => 'minimalist_page_creation',
                     'local_adaptive_course_audit_prev_tourid' => $maintourid,
                 ]),
-                true,
+                false,
                 get_string('minimalist_page_tour_intro_title', 'local_adaptive_course_audit'),
                 get_string('minimalist_page_tour_intro_content', 'local_adaptive_course_audit')
             );
-            $pageManager->add_step(
+            $pagemanager->add_step(
                 get_string('minimalist_page_step1_title', 'local_adaptive_course_audit'),
                 get_string('minimalist_page_step1_content', 'local_adaptive_course_audit'),
                 (string)target::TARGET_SELECTOR,
                 '#id_name',
                 $commonconfig
             );
-            $pageManager->add_step(
+            $pagemanager->add_step(
                 get_string('minimalist_page_step2_title', 'local_adaptive_course_audit'),
                 get_string('minimalist_page_step2_content', 'local_adaptive_course_audit'),
                 (string)target::TARGET_SELECTOR,
                 '#id_contentsection',
                 $commonconfig
             );
-            $pageManager->add_step(
+            $pagemanager->add_step(
                 get_string('minimalist_page_step3_title', 'local_adaptive_course_audit'),
                 get_string('minimalist_page_step3_content', 'local_adaptive_course_audit'),
                 (string)target::TARGET_SELECTOR,
                 '#id_submitbutton2',
                 $commonconfig
             );
-            $subtourAId = (int)$pageTour->get_id();
-            $pageManager->reset_tour_for_all_users($subtourAId);
+            $subtouraid = (int)$pagetour->get_id();
+            $pagemanager->reset_tour_for_all_users($subtouraid);
         } catch (\Throwable $exception) {
             debugging('Error creating minimalist page subtour: ' . $exception->getMessage(), DEBUG_DEVELOPER);
         }
 
-        // -------------------------------------------------------------------------
         // Tour 2 (T2): step 6 — auto-triggers on course/view.php after T1 is deleted.
         // Created now so its ID is available for Subtour B's prev_tourid.
-        // -------------------------------------------------------------------------
-        $t2Manager = new tour_manager();
-        $t2Id = null;
+        $t2manager = new tour_manager();
+        $t2id = null;
         try {
             $scenariotitle = get_string('scenario_' . self::SCENARIO_MINIMALIST . '_title', 'local_adaptive_course_audit');
-            $t2Tour = $t2Manager->create_tour(
+            $t2tour = $t2manager->create_tour(
                 get_string('scenario_tourname', 'local_adaptive_course_audit', $scenariotitle),
                 get_string('scenario_tourdescription', 'local_adaptive_course_audit'),
                 $seqtourpathmatch,
                 $seqtourconfig,
-                false   // no intro step — this is a mid-sequence continuation
+                false   // No intro step — this is a mid-sequence continuation.
             );
-            $t2Id = (int)$t2Tour->get_id();
-            // T2 mapping is NOT stored now — the unique constraint on courseid allows only one
-            // mapping at a time, and T1 already occupies it. The observer inserts the T2 mapping
-            // when Subtour A ends and T1 is deleted (see observer::tour_ended).
+            $t2id = (int)$t2tour->get_id();
+            // T2 mapping is NOT stored now — the unique constraint on courseid allows only one.
+            // Mapping at a time, and T1 already occupies it. The observer inserts the T2 mapping.
+            // When Subtour A ends and T1 is deleted (see observer::tour_ended).
         } catch (\Throwable $exception) {
             debugging('Error creating minimalist T2 sequence tour: ' . $exception->getMessage(), DEBUG_DEVELOPER);
         }
 
-        // -------------------------------------------------------------------------
         // Subtour B: Quiz creation — linked to T2 via prev_tourid.
         // When Subtour B ends, the observer will delete T2, unblocking T3.
-        // -------------------------------------------------------------------------
-        $subtourBId = null;
+        $subtourbid = null;
         try {
-            $quizManager = new tour_manager();
-            $quizTour = $quizManager->create_tour(
+            $quizmanager = new tour_manager();
+            $quiztour = $quizmanager->create_tour(
                 get_string('minimalist_quiz_tour_intro_title', 'local_adaptive_course_audit'),
                 get_string('minimalist_quiz_tour_intro_content', 'local_adaptive_course_audit'),
                 '/__aca_noop__',
                 array_merge($actiontourconfig, [
                     'local_adaptive_course_audit_key' => 'minimalist_quiz_creation',
-                    'local_adaptive_course_audit_prev_tourid' => $t2Id ?? 0,
+                    'local_adaptive_course_audit_prev_tourid' => $t2id ?? 0,
                 ]),
-                true,
+                false,
                 get_string('minimalist_quiz_tour_intro_title', 'local_adaptive_course_audit'),
                 get_string('minimalist_quiz_tour_intro_content', 'local_adaptive_course_audit')
             );
-            $quizManager->add_step(
+            $quizmanager->add_step(
                 get_string('minimalist_quiz_step1_title', 'local_adaptive_course_audit'),
                 get_string('minimalist_quiz_step1_content', 'local_adaptive_course_audit'),
                 (string)target::TARGET_SELECTOR,
                 '#id_name',
                 $commonconfig
             );
-            $quizManager->add_step(
+            $quizmanager->add_step(
                 get_string('minimalist_quiz_step2_title', 'local_adaptive_course_audit'),
                 get_string('minimalist_quiz_step2_content', 'local_adaptive_course_audit'),
                 (string)target::TARGET_SELECTOR,
                 '#id_preferredbehaviour',
                 $commonconfig
             );
-            $quizManager->add_step(
+            $quizmanager->add_step(
                 get_string('minimalist_quiz_step3_title', 'local_adaptive_course_audit'),
                 get_string('minimalist_quiz_step3_content', 'local_adaptive_course_audit'),
                 (string)target::TARGET_SELECTOR,
                 '#id_attempts',
                 $commonconfig
             );
-            $quizManager->add_step(
+            $quizmanager->add_step(
                 get_string('minimalist_quiz_step4_title', 'local_adaptive_course_audit'),
                 get_string('minimalist_quiz_step4_content', 'local_adaptive_course_audit'),
                 (string)target::TARGET_SELECTOR,
                 '#id_activitycompletionheader',
                 $commonconfig
             );
-            $quizManager->add_step(
+            $quizmanager->add_step(
                 get_string('minimalist_quiz_step5_title', 'local_adaptive_course_audit'),
                 get_string('minimalist_quiz_step5_content', 'local_adaptive_course_audit'),
                 (string)target::TARGET_SELECTOR,
                 '#id_submitbutton2',
                 $commonconfig
             );
-            $subtourBId = (int)$quizTour->get_id();
-            $quizManager->reset_tour_for_all_users($subtourBId);
+            $subtourbid = (int)$quiztour->get_id();
+            $quizmanager->reset_tour_for_all_users($subtourbid);
         } catch (\Throwable $exception) {
             debugging('Error creating minimalist quiz subtour: ' . $exception->getMessage(), DEBUG_DEVELOPER);
         }
 
-        // -------------------------------------------------------------------------
         // Tour 3 (T3): step 7 — auto-triggers on course/view.php after T2 is deleted.
-        // -------------------------------------------------------------------------
-        $t3Manager = new tour_manager();
-        $t3Id = null;
+        $t3manager = new tour_manager();
+        $t3id = null;
         try {
             $scenariotitle = get_string('scenario_' . self::SCENARIO_MINIMALIST . '_title', 'local_adaptive_course_audit');
-            $t3Tour = $t3Manager->create_tour(
+            $t3tour = $t3manager->create_tour(
                 get_string('scenario_tourname', 'local_adaptive_course_audit', $scenariotitle),
                 get_string('scenario_tourdescription', 'local_adaptive_course_audit'),
                 $seqtourpathmatch,
@@ -2382,29 +2356,27 @@ final class service
                     'reflex' => false,
                     'local_adaptive_course_audit_scenario' => self::SCENARIO_MINIMALIST,
                     'local_adaptive_course_audit_courseid' => $courseid,
-                    'local_adaptive_course_audit_prev_tourid' => $t2Id,
-                    'startacatour' => true,   
+                    'local_adaptive_course_audit_prev_tourid' => $t2id,
+                    'startacatour' => true,
                 ],
-                false   // no intro step
+                false   // No intro step.
             );
-            $t3Id = (int)$t3Tour->get_id();
+            $t3id = (int)$t3tour->get_id();
             // T3 mapping is NOT stored now — same reason as T2 above.
             // The observer inserts the T3 mapping when Subtour B ends and T2 is deleted.
         } catch (\Throwable $exception) {
             debugging('Error creating minimalist T3 sequence tour: ' . $exception->getMessage(), DEBUG_DEVELOPER);
         }
 
-        // -------------------------------------------------------------------------
         // Build action button HTML.
-        // -------------------------------------------------------------------------
         $pageurl = new \moodle_url('/course/modedit.php', [
             'add' => 'page',
             'course' => $courseid,
             'return' => 0,
             'section' => $nextsectionnum,
         ]);
-        if ($subtourAId !== null) {
-            $pageurl->param('startacatour', $subtourAId);
+        if ($subtouraid !== null) {
+            $pageurl->param('startacatour', $subtouraid);
         }
         $pagebtn = html_writer::link(
             $pageurl->out(false),
@@ -2419,8 +2391,8 @@ final class service
             'return' => 0,
             'section' => $nextsectionnum,
         ]);
-        if ($subtourBId !== null) {
-            $quizurl->param('startacatour', $subtourBId);
+        if ($subtourbid !== null) {
+            $quizurl->param('startacatour', $subtourbid);
         }
         $quizbtn = html_writer::link(
             $quizurl->out(false),
@@ -2429,9 +2401,7 @@ final class service
         );
         $quizbtnhtml = html_writer::div($quizbtn, 'local-adaptive-course-audit-step-actions');
 
-        // -------------------------------------------------------------------------
         // T1: steps 1–5 (intro step was added by create_tour in start_scenario_tour).
-        // -------------------------------------------------------------------------
         $manager->add_step(
             get_string('scenario_1_step1_title', 'local_adaptive_course_audit'),
             get_string('scenario_1_step1_content', 'local_adaptive_course_audit'),
@@ -2470,12 +2440,10 @@ final class service
             $commonconfig
         );
 
-        // -------------------------------------------------------------------------
         // T2: step 6 — quiz action button (button → Subtour B → course view → T3).
-        // -------------------------------------------------------------------------
-        if ($t2Id !== null) {
+        if ($t2id !== null) {
             try {
-                $t2Manager->add_step(
+                $t2manager->add_step(
                     get_string('scenario_1_step6_title', 'local_adaptive_course_audit'),
                     get_string('scenario_1_step6_content', 'local_adaptive_course_audit') . $quizbtnhtml,
                     (string)target::TARGET_SELECTOR,
@@ -2487,12 +2455,10 @@ final class service
             }
         }
 
-        // -------------------------------------------------------------------------
         // T3: step 7 — final summary step.
-        // -------------------------------------------------------------------------
-        if ($t3Id !== null) {
+        if ($t3id !== null) {
             try {
-                $t3Manager->add_step(
+                $t3manager->add_step(
                     get_string('scenario_1_step7_title', 'local_adaptive_course_audit'),
                     get_string('scenario_1_step7_content', 'local_adaptive_course_audit'),
                     (string)target::TARGET_UNATTACHED,
@@ -2506,11 +2472,11 @@ final class service
 
         // Reset all three main tours so the current user sees them from the start.
         $manager->reset_tour_for_all_users($maintourid);
-        if ($t2Id !== null) {
-            $t2Manager->reset_tour_for_all_users($t2Id);
+        if ($t2id !== null) {
+            $t2manager->reset_tour_for_all_users($t2id);
         }
-        if ($t3Id !== null) {
-            $t3Manager->reset_tour_for_all_users($t3Id);
+        if ($t3id !== null) {
+            $t3manager->reset_tour_for_all_users($t3id);
         }
     }
 
@@ -2520,8 +2486,7 @@ final class service
      * @param int $courseid
      * @return void
      */
-    private static function delete_existing_action_tours(int $courseid): void
-    {
+    private static function delete_existing_action_tours(int $courseid): void {
         global $DB;
 
         try {
@@ -2567,8 +2532,7 @@ final class service
      * @param array $results
      * @return array Map of action tour keys to tour IDs.
      */
-    private static function create_action_tours($course, array $results): array
-    {
+    private static function create_action_tours($course, array $results): array {
         $coursecontext = context_course::instance($course->id);
         $courseshortname = format_string($course->shortname, true, ['context' => $coursecontext]);
         $actiontourmap = [];
@@ -2600,9 +2564,10 @@ final class service
                     'action' => $actionlabel,
                 ]);
 
-                $tourdescription = $action['tour']['description'] ?? get_string('actiontourdescription', 'local_adaptive_course_audit', (object)[
-                    'course' => $courseshortname,
-                ]);
+                $tourdescription = $action['tour']['description']
+                    ?? get_string('actiontourdescription', 'local_adaptive_course_audit', (object)[
+                        'course' => $courseshortname,
+                    ]);
 
                 $tourconfig = array_merge([
                     'displaystepnumbers' => true,

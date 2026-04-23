@@ -18,15 +18,17 @@
  * Version metadata for the Adaptive course audit local plugin.
  *
  * @package     local_adaptive_course_audit
- * @copyright   2025 Moodle HQ
+ * @copyright   2025 Bastian Schmidt-Kuhl <bastian.schmidt-kuhl@ruhr-uni-bochum.de>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version   = 2026032602;
+$plugin->version   = 2026042002;
 $plugin->requires  = 2024100700; // Moodle 4.5 release.
 $plugin->component = 'local_adaptive_course_audit';
+$plugin->dependencies = [
+    'tool_usertours' => 2024100700,
+];
 $plugin->maturity  = MATURITY_ALPHA;
-$plugin->release   = '1.0.1';
-
+$plugin->release   = '1.2.0';

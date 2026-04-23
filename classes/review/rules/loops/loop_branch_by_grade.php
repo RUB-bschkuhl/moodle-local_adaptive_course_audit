@@ -18,7 +18,6 @@ declare(strict_types=1);
 
 namespace local_adaptive_course_audit\review\rules\loops;
 
-defined('MOODLE_INTERNAL') || die();
 
 use local_adaptive_course_audit\review\availability_helper;
 use local_adaptive_course_audit\review\rules\rule_base;
@@ -30,21 +29,23 @@ use tool_usertours\target;
  * This is a classic adaptive pattern: remedial path for lower scores, advanced path for higher scores.
  *
  * @package     local_adaptive_course_audit
+ * @copyright   2025 Bastian Schmidt-Kuhl <bastian.schmidt-kuhl@ruhr-uni-bochum.de>
+ * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class loop_branch_by_grade extends rule_base {
     /** @var string Rule identifier. */
-    public const rule_key = 'loop_branch_by_grade';
+    public const RULE_KEY = 'loop_branch_by_grade';
 
     /** @var string Target type. */
-    public const target_type = 'section';
+    public const TARGET_TYPE = 'section';
 
     /**
      * Constructor.
      */
     public function __construct() {
         parent::__construct(
-            self::rule_key,
-            self::target_type,
+            self::RULE_KEY,
+            self::TARGET_TYPE,
             get_string('rule_loop_branch_by_grade_name', 'local_adaptive_course_audit'),
             get_string('rule_loop_branch_by_grade_description', 'local_adaptive_course_audit'),
             'hint'
@@ -73,7 +74,7 @@ class loop_branch_by_grade extends rule_base {
             return null;
         }
 
-        $quizzes = array_values(array_filter($modules, static function($cm) {
+        $quizzes = array_values(array_filter($modules, static function ($cm) {
             return $cm->modname === 'quiz';
         }));
         if (empty($quizzes)) {
@@ -284,4 +285,3 @@ class loop_branch_by_grade extends rule_base {
         ]);
     }
 }
-

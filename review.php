@@ -14,6 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+/**
+ * Adaptive course audit review entry-point page.
+ *
+ * @package     local_adaptive_course_audit
+ * @copyright   2025 Bastian Schmidt-Kuhl <bastian.schmidt-kuhl@ruhr-uni-bochum.de>
+ * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
 declare(strict_types=1);
 
 use local_adaptive_course_audit\review\service as review_service;
@@ -38,7 +46,6 @@ $context = context_course::instance($course->id);
 if (!$context) {
     throw new moodle_exception('invalidcourseid');
 }
-/** @var context $context */
 require_capability('local/adaptive_course_audit:view', $context);
 
 $url = new moodle_url('/local/adaptive_course_audit/review.php', ['courseid' => $course->id]);
@@ -87,7 +94,7 @@ if ($action === 'startreview') {
         redirect($url, $failuremessage, 0, \core\output\notification::NOTIFY_ERROR);
     } catch (moodle_exception $exception) {
         debugging('Error in course audit: ' . $exception->getMessage(), DEBUG_DEVELOPER);
-        redirect($url, $exception->getMessage(), 0, \core\output\notification::NOTIFY_ERROR);
+        redirect($url, get_string('startreviewerror', 'local_adaptive_course_audit'), 0, \core\output\notification::NOTIFY_ERROR);
     } catch (Throwable $exception) {
         debugging('Error in course audit: ' . $exception->getMessage(), DEBUG_DEVELOPER);
         redirect($url, get_string('startreviewerror', 'local_adaptive_course_audit'), 0, \core\output\notification::NOTIFY_ERROR);
@@ -114,7 +121,7 @@ if ($action === 'startteach') {
         redirect($url, $failuremessage, 0, \core\output\notification::NOTIFY_ERROR);
     } catch (moodle_exception $exception) {
         debugging('Error in adaptive teaching tour: ' . $exception->getMessage(), DEBUG_DEVELOPER);
-        redirect($url, $exception->getMessage(), 0, \core\output\notification::NOTIFY_ERROR);
+        redirect($url, get_string('startteacherror', 'local_adaptive_course_audit'), 0, \core\output\notification::NOTIFY_ERROR);
     } catch (Throwable $exception) {
         debugging('Error in adaptive teaching tour: ' . $exception->getMessage(), DEBUG_DEVELOPER);
         redirect($url, get_string('startteacherror', 'local_adaptive_course_audit'), 0, \core\output\notification::NOTIFY_ERROR);
@@ -160,7 +167,7 @@ if ($action === 'startscenario') {
         redirect($url, $failuremessage, 0, \core\output\notification::NOTIFY_ERROR);
     } catch (moodle_exception $exception) {
         debugging('Error in scenario tour: ' . $exception->getMessage(), DEBUG_DEVELOPER);
-        redirect($url, $exception->getMessage(), 0, \core\output\notification::NOTIFY_ERROR);
+        redirect($url, get_string('startscenarioerror', 'local_adaptive_course_audit'), 0, \core\output\notification::NOTIFY_ERROR);
     } catch (Throwable $exception) {
         debugging('Error in scenario tour: ' . $exception->getMessage(), DEBUG_DEVELOPER);
         redirect($url, get_string('startscenarioerror', 'local_adaptive_course_audit'), 0, \core\output\notification::NOTIFY_ERROR);
@@ -322,7 +329,8 @@ try {
 
 if (!empty($sectioninfoall)) {
     foreach ($sectioninfoall as $sectioninfo) {
-        if ((property_exists($sectioninfo, 'visible') && !$sectioninfo->visible) ||
+        if (
+            (property_exists($sectioninfo, 'visible') && !$sectioninfo->visible) ||
             (property_exists($sectioninfo, 'uservisible') && !$sectioninfo->uservisible)
         ) {
             continue;
@@ -382,7 +390,10 @@ if (!empty($sectioninfoall)) {
                 try {
                     $cm = $modinfo->get_cm($cmid);
                 } catch (Throwable $exception) {
-                    debugging('Error resolving section module for adaptive audit review page: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+                    debugging(
+                        'Error resolving section module for adaptive audit review page: ' . $exception->getMessage(),
+                        DEBUG_DEVELOPER
+                    );
                     continue;
                 }
 
@@ -458,9 +469,7 @@ $table = html_writer::tag(
         'thead',
         html_writer::tag(
             'tr',
-            implode('', array_map(function ($header) {
-                return html_writer::tag('th', $header);
-            }, $tableheaders))
+            implode('', array_map(static fn(string $header): string => html_writer::tag('th', $header), $tableheaders))
         )
     ) .
         html_writer::tag('tbody', implode('', $rows)),

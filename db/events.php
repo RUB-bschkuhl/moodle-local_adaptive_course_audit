@@ -30,4 +30,3 @@ $observers = [
         'callback' => \local_adaptive_course_audit\observer::class . '::tour_ended',
     ],
 ];
-

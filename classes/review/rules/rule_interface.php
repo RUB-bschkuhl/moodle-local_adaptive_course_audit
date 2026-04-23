@@ -18,7 +18,6 @@ declare(strict_types=1);
 
 namespace local_adaptive_course_audit\review\rules;
 
-defined('MOODLE_INTERNAL') || die();
 
 /**
  * Interface for adaptive course audit rules.
@@ -58,4 +57,3 @@ interface rule_interface {
      */
     public function get_category();
 }
-

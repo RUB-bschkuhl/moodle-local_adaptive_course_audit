@@ -18,7 +18,6 @@ declare(strict_types=1);
 
 namespace local_adaptive_course_audit\tour;
 
-defined('MOODLE_INTERNAL') || die();
 
 use tool_usertours\step;
 use tool_usertours\tour;
@@ -28,7 +27,7 @@ use tool_usertours\target;
  * Lightweight tour manager for Adaptive course audit.
  *
  * @package     local_adaptive_course_audit
- * @copyright   2025 Moodle HQ
+ * @copyright   2025 Bastian Schmidt-Kuhl <bastian.schmidt-kuhl@ruhr-uni-bochum.de>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 final class manager
@@ -42,8 +41,7 @@ final class manager
      * @param int $tourid
      * @return tour|null
      */
-    private function get_tour_if_exists(int $tourid): ?tour
-    {
+    private function get_tour_if_exists(int $tourid): ?tour {
         global $DB;
 
         if (!$DB->record_exists('tool_usertours_tours', ['id' => $tourid])) {
@@ -78,8 +76,7 @@ final class manager
         bool $addintrostep = true,
         ?string $introtitle = null,
         ?string $introcontent = null
-    ): tour
-    {
+    ): tour {
         global $USER;
 
         $tour = new tour();
@@ -143,8 +140,7 @@ final class manager
      * @param array $config
      * @return step
      */
-    public function add_step(string $title, string $content, string $targettype, string $targetvalue, array $config = []): step
-    {
+    public function add_step(string $title, string $content, string $targettype, string $targetvalue, array $config = []): step {
         if ($this->tour === null) {
             throw new \coding_exception('create_tour() must be called before add_step().');
         }
@@ -173,8 +169,7 @@ final class manager
      * @param int $tourid
      * @return bool
      */
-    public function reset_tour_for_all_users(int $tourid): bool
-    {
+    public function reset_tour_for_all_users(int $tourid): bool {
         $tour = $this->get_tour_if_exists($tourid);
         if ($tour === null) {
             debugging('Adaptive course audit tour not found during reset: ' . $tourid, DEBUG_DEVELOPER);
@@ -191,8 +186,7 @@ final class manager
      * @param int $tourid
      * @return bool
      */
-    public function delete_tour(int $tourid): bool
-    {
+    public function delete_tour(int $tourid): bool {
         $tour = $this->get_tour_if_exists($tourid);
         if ($tour === null) {
             debugging('Adaptive course audit tour not found during delete: ' . $tourid, DEBUG_DEVELOPER);

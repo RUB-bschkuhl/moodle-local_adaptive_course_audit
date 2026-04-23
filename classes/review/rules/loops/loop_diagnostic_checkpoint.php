@@ -18,7 +18,6 @@ declare(strict_types=1);
 
 namespace local_adaptive_course_audit\review\rules\loops;
 
-defined('MOODLE_INTERNAL') || die();
 
 use local_adaptive_course_audit\review\availability_helper;
 use local_adaptive_course_audit\review\rules\rule_base;
@@ -33,13 +32,15 @@ use tool_usertours\target;
  * - Optional completion-gated follow-ups to avoid skipping ahead.
  *
  * @package     local_adaptive_course_audit
+ * @copyright   2025 Bastian Schmidt-Kuhl <bastian.schmidt-kuhl@ruhr-uni-bochum.de>
+ * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class loop_diagnostic_checkpoint extends rule_base {
     /** @var string Rule identifier. */
-    public const rule_key = 'loop_diagnostic_checkpoint';
+    public const RULE_KEY = 'loop_diagnostic_checkpoint';
 
     /** @var string Target type. */
-    public const target_type = 'section';
+    public const TARGET_TYPE = 'section';
 
     /** @var string[] */
     private const DIAGNOSTIC_MODS = ['choice', 'feedback', 'survey'];
@@ -49,8 +50,8 @@ class loop_diagnostic_checkpoint extends rule_base {
      */
     public function __construct() {
         parent::__construct(
-            self::rule_key,
-            self::target_type,
+            self::RULE_KEY,
+            self::TARGET_TYPE,
             get_string('rule_loop_diagnostic_checkpoint_name', 'local_adaptive_course_audit'),
             get_string('rule_loop_diagnostic_checkpoint_description', 'local_adaptive_course_audit'),
             'hint'
@@ -168,9 +169,17 @@ class loop_diagnostic_checkpoint extends rule_base {
         }
 
         if ($dependentcount === 0) {
-            $messages[] = get_string('rule_loop_diagnostic_checkpoint_suggest_gate', 'local_adaptive_course_audit', $diagnostic->name);
+            $messages[] = get_string(
+                'rule_loop_diagnostic_checkpoint_suggest_gate',
+                'local_adaptive_course_audit',
+                $diagnostic->name
+            );
         } else {
-            $messages[] = get_string('rule_loop_diagnostic_checkpoint_gated_followups', 'local_adaptive_course_audit', $dependentcount);
+            $messages[] = get_string(
+                'rule_loop_diagnostic_checkpoint_gated_followups',
+                'local_adaptive_course_audit',
+                $dependentcount
+            );
         }
 
         $status = ($hassignposting && $dependentcount > 0);
@@ -236,4 +245,3 @@ class loop_diagnostic_checkpoint extends rule_base {
         return $visible;
     }
 }
-

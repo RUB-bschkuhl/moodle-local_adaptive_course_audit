@@ -25,7 +25,7 @@
  * Moodle core.
  *
  * @module     local_adaptive_course_audit/tour_launcher
- * @copyright  2026 Moodle HQ
+ * @copyright  2026 Bastian Schmidt-Kuhl <bastian.schmidt-kuhl@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 import {init as usertourInit} from 'tool_usertours/usertours';
@@ -99,4 +99,92 @@ export const init = (continueTour = 0) => {
     // Short delay so the normal Moodle bootstrap can run first;
     // usertourInit() will end any competing tour before starting ours.
     window.setTimeout(startTour, 500);
+};
+
+const NEXT_AFTER_SAVE_KEY = 'aca_next_after_save';
+
+/**
+ * On modedit.php: attach a submit listener to the modedit form that stashes
+ * a {sectionid, tourid, courseid} follow-up target only when the user
+ * actually submits (not when they cancel). The stash is consumed on the
+ * next course view to redirect to the section edit page.
+ *
+ * @param {number} sectionid
+ * @param {number} tourid
+ * @param {number} courseid
+ */
+export const stashAfterSave = (sectionid, tourid, courseid) => {
+    const writeStash = () => {
+        try {
+            window.sessionStorage.setItem(NEXT_AFTER_SAVE_KEY, JSON.stringify({
+                sectionid: parseInt(sectionid, 10),
+                tourid: parseInt(tourid, 10),
+                courseid: parseInt(courseid, 10),
+            }));
+        } catch (error) {
+            window.console.error('[ACA tour_launcher] Failed to stash next-after-save', error);
+        }
+    };
+
+    const attach = () => {
+        const form = document.querySelector('form.mform');
+        if (!form) {
+            return false;
+        }
+        // Only stash when the form is actually submitted, not when Cancel is clicked.
+        // Moodle's cancel button triggers a native form reset/navigation via its own handler
+        // that does not fire 'submit'.
+        form.addEventListener('submit', writeStash);
+        return true;
+    };
+
+    if (!attach()) {
+        // DOM may not be ready yet.
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', attach, {once: true});
+        }
+    }
+};
+
+/**
+ * On course/view.php: if a stash exists for this course, consume it and
+ * redirect to the section edit page with the stored tour id.
+ *
+ * @param {number} courseid
+ */
+export const consumeAfterSave = (courseid) => {
+    let payload;
+    try {
+        const raw = window.sessionStorage.getItem(NEXT_AFTER_SAVE_KEY);
+        if (!raw) {
+            return;
+        }
+        payload = JSON.parse(raw);
+    } catch (error) {
+        window.console.error('[ACA tour_launcher] Failed to read next-after-save stash', error);
+        return;
+    }
+
+    const sectionid = parseInt(payload && payload.sectionid, 10);
+    const tourid = parseInt(payload && payload.tourid, 10);
+    const stashedcourseid = parseInt(payload && payload.courseid, 10);
+    if (!sectionid || !tourid || !stashedcourseid) {
+        return;
+    }
+    if (parseInt(courseid, 10) !== stashedcourseid) {
+        return;
+    }
+
+    try {
+        window.sessionStorage.removeItem(NEXT_AFTER_SAVE_KEY);
+    } catch (error) {
+        window.console.error('[ACA tour_launcher] Failed to clear next-after-save stash', error);
+    }
+
+    const base = (window.M && window.M.cfg && window.M.cfg.wwwroot) ? window.M.cfg.wwwroot : '';
+    const url = base + '/course/editsection.php'
+        + '?id=' + encodeURIComponent(sectionid)
+        + '&startacatour=' + encodeURIComponent(tourid)
+        + '&acaexpand=1';
+    window.location.replace(url);
 };

@@ -18,7 +18,6 @@ declare(strict_types=1);
 
 namespace local_adaptive_course_audit\review\rules\loops;
 
-defined('MOODLE_INTERNAL') || die();
 
 use local_adaptive_course_audit\review\rules\rule_base;
 
@@ -28,13 +27,15 @@ use local_adaptive_course_audit\review\rules\rule_base;
  * When enabled, teachers can reference activity names in feedback (questions/quizzes) and Moodle will auto-link them.
  *
  * @package     local_adaptive_course_audit
+ * @copyright   2025 Bastian Schmidt-Kuhl <bastian.schmidt-kuhl@ruhr-uni-bochum.de>
+ * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 final class loop_course_filter_activitynames_autolinking extends rule_base {
     /** @var string Rule identifier. */
-    public const rule_key = 'course_filter_activitynames_autolinking';
+    public const RULE_KEY = 'course_filter_activitynames_autolinking';
 
     /** @var string Target type. */
-    public const target_type = 'course';
+    public const TARGET_TYPE = 'course';
 
     /** @var string Filter shortname for Activity names auto-linking. */
     private const FILTER_NAME = 'activitynames';
@@ -44,8 +45,8 @@ final class loop_course_filter_activitynames_autolinking extends rule_base {
      */
     public function __construct() {
         parent::__construct(
-            self::rule_key,
-            self::target_type,
+            self::RULE_KEY,
+            self::TARGET_TYPE,
             get_string('rule_course_filter_activitynames_name', 'local_adaptive_course_audit'),
             get_string('rule_course_filter_activitynames_description', 'local_adaptive_course_audit'),
             'hint'
@@ -129,4 +130,3 @@ final class loop_course_filter_activitynames_autolinking extends rule_base {
         );
     }
 }
-

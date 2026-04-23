@@ -18,7 +18,6 @@ declare(strict_types=1);
 
 namespace local_adaptive_course_audit\review;
 
-defined('MOODLE_INTERNAL') || die();
 
 /**
  * Helper for parsing Moodle availability JSON.
@@ -26,6 +25,8 @@ defined('MOODLE_INTERNAL') || die();
  * Availability rules can contain nested condition groups, so we traverse recursively.
  *
  * @package     local_adaptive_course_audit
+ * @copyright   2025 Bastian Schmidt-Kuhl <bastian.schmidt-kuhl@ruhr-uni-bochum.de>
+ * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 final class availability_helper {
     /**
@@ -157,4 +158,3 @@ final class availability_helper {
         }
     }
 }
-

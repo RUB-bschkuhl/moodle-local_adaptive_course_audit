@@ -19,7 +19,7 @@
  * This ensures usertour step targeting works even when settings sections are collapsed.
  *
  * @module     local_adaptive_course_audit/modedit_expander
- * @copyright  2026 Moodle HQ
+ * @copyright  2026 Bastian Schmidt-Kuhl <bastian.schmidt-kuhl@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 

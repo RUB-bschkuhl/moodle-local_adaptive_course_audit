@@ -18,7 +18,6 @@ declare(strict_types=1);
 
 namespace local_adaptive_course_audit\task;
 
-defined('MOODLE_INTERNAL') || die();
 
 use core\task\scheduled_task;
 use local_adaptive_course_audit\tour\manager as tour_manager;
@@ -29,11 +28,12 @@ use local_adaptive_course_audit\tour\manager as tour_manager;
  * This is a safety net in addition to the ad-hoc deletion queued when a tour ends.
  *
  * @package     local_adaptive_course_audit
+ * @copyright   2025 Bastian Schmidt-Kuhl <bastian.schmidt-kuhl@ruhr-uni-bochum.de>
+ * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 final class cleanup_tours extends scheduled_task {
-
     /** @var int Retention period for stale mappings (12 hours). */
-    private const RETENTION_SECONDS = 12 * HOURSECS; 
+    private const RETENTION_SECONDS = 12 * HOURSECS;
     /** @var string Config marker for action/subtours owned by this plugin. */
     private const ACTION_TOUR_CONFIG_MARKER = 'local_adaptive_course_audit_action';
     /** @var string Table storing latest audit-review starts per user/course. */
@@ -90,7 +90,10 @@ final class cleanup_tours extends scheduled_task {
                 try {
                     $manager->delete_tour($tourid);
                 } catch (\Throwable $exception) {
-                    debugging('Error deleting stale adaptive course audit tour via cleanup task: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+                    debugging(
+                        'Error deleting stale adaptive course audit tour via cleanup task: ' . $exception->getMessage(),
+                        DEBUG_DEVELOPER
+                    );
                 }
             }
 
@@ -136,14 +139,14 @@ final class cleanup_tours extends scheduled_task {
             return;
         }
 
-        $hasTimecreated = !empty($columns) && array_key_exists('timecreated', $columns);
-        $hasTimemodified = !empty($columns) && array_key_exists('timemodified', $columns);
+        $hastimecreated = !empty($columns) && array_key_exists('timecreated', $columns);
+        $hastimemodified = !empty($columns) && array_key_exists('timemodified', $columns);
 
         $fields = 'id, configdata';
-        if ($hasTimecreated) {
+        if ($hastimecreated) {
             $fields .= ', timecreated';
         }
-        if ($hasTimemodified) {
+        if ($hastimemodified) {
             $fields .= ', timemodified';
         }
 
@@ -176,25 +179,25 @@ final class cleanup_tours extends scheduled_task {
                 continue;
             }
 
-            $candidateTimes = [];
+            $candidatetimes = [];
             if (!empty($config[self::TOUR_MAJOR_UPDATE_TIME_CONFIG])) {
-                $candidateTimes[] = (int)$config[self::TOUR_MAJOR_UPDATE_TIME_CONFIG];
+                $candidatetimes[] = (int)$config[self::TOUR_MAJOR_UPDATE_TIME_CONFIG];
             }
-            if ($hasTimemodified && isset($record->timemodified) && (int)$record->timemodified > 0) {
-                $candidateTimes[] = (int)$record->timemodified;
+            if ($hastimemodified && isset($record->timemodified) && (int)$record->timemodified > 0) {
+                $candidatetimes[] = (int)$record->timemodified;
             }
-            if ($hasTimecreated && isset($record->timecreated) && (int)$record->timecreated > 0) {
-                $candidateTimes[] = (int)$record->timecreated;
+            if ($hastimecreated && isset($record->timecreated) && (int)$record->timecreated > 0) {
+                $candidatetimes[] = (int)$record->timecreated;
             }
             if (!empty($config[self::PLUGIN_TOUR_TIMECREATED_CONFIG])) {
-                $candidateTimes[] = (int)$config[self::PLUGIN_TOUR_TIMECREATED_CONFIG];
+                $candidatetimes[] = (int)$config[self::PLUGIN_TOUR_TIMECREATED_CONFIG];
             }
 
-            $candidateTimes = array_filter($candidateTimes, static function(int $value): bool {
+            $candidatetimes = array_filter($candidatetimes, static function (int $value): bool {
                 return $value > 0;
             });
 
-            $tourtime = !empty($candidateTimes) ? max($candidateTimes) : null;
+            $tourtime = !empty($candidatetimes) ? max($candidatetimes) : null;
 
             if ($tourtime === null) {
                 debugging(
@@ -211,9 +214,11 @@ final class cleanup_tours extends scheduled_task {
             try {
                 $manager->delete_tour($tourid);
             } catch (\Throwable $exception) {
-                debugging('Error deleting stale adaptive action tour via cleanup task: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+                debugging(
+                    'Error deleting stale adaptive action tour via cleanup task: ' . $exception->getMessage(),
+                    DEBUG_DEVELOPER
+                );
             }
         }
     }
 }
-

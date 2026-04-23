@@ -18,7 +18,6 @@ declare(strict_types=1);
 
 namespace local_adaptive_course_audit;
 
-defined('MOODLE_INTERNAL') || die();
 
 use local_adaptive_course_audit\tour\manager as tour_manager;
 use tool_usertours\step as usertour_step;
@@ -28,6 +27,8 @@ use tool_usertours\tour as usertour;
  * Event observer callbacks for the Adaptive course audit plugin.
  *
  * @package     local_adaptive_course_audit
+ * @copyright   2025 Bastian Schmidt-Kuhl <bastian.schmidt-kuhl@ruhr-uni-bochum.de>
+ * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 final class observer
 {
@@ -44,8 +45,7 @@ final class observer
      * @param int $maintourid The main tour id which just ended.
      * @return void
      */
-    private static function queue_related_subtour_deletions(int $maintourid): void
-    {
+    private static function queue_related_subtour_deletions(int $maintourid): void {
         global $DB;
 
         // Resolve courseid from the mapping table (needed for old-style backward compat).
@@ -136,8 +136,7 @@ final class observer
      * @param \tool_usertours\event\tour_ended $event The event data.
      * @return void
      */
-    public static function tour_ended(\tool_usertours\event\tour_ended $event): void
-    {
+    public static function tour_ended(\tool_usertours\event\tour_ended $event): void {
         global $DB;
 
         $data = $event->get_data();
@@ -159,7 +158,10 @@ final class observer
         try {
             $ismain = $DB->record_exists('local_adaptive_course_tour', ['tourid' => $tourid]);
         } catch (\Throwable $exception) {
-            debugging('Error checking adaptive course audit tour mapping: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+            debugging(
+                'Error checking adaptive course audit tour mapping: ' . $exception->getMessage(),
+                DEBUG_DEVELOPER
+            );
         }
 
         try {
@@ -168,7 +170,8 @@ final class observer
                 $decoded = json_decode((string)$record->configdata, true);
                 if (is_array($decoded)) {
                     $config = $decoded;
-                    $ownedbyplugin = !empty($config['local_adaptive_course_audit']) || !empty($config['local_adaptive_course_audit_action']);
+                    $ownedbyplugin = !empty($config['local_adaptive_course_audit'])
+                        || !empty($config['local_adaptive_course_audit_action']);
                     $issubtour = !empty($config['local_adaptive_course_audit_action']);
                     $courseid = (int)($config['local_adaptive_course_audit_courseid'] ?? 0);
                     $prevtourid = (int)($config['local_adaptive_course_audit_prev_tourid'] ?? 0);
@@ -217,13 +220,16 @@ final class observer
                         ]);
                     }
                 } catch (\Throwable $exception) {
-                    debugging('Error deleting adaptive course audit review start marker: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+                    debugging(
+                        'Error deleting adaptive course audit review start marker: ' . $exception->getMessage(),
+                        DEBUG_DEVELOPER
+                    );
                 }
             }
         }
 
         if ($issubtour) {
-            // Only used in scenario tours
+            // Only used in scenario tours.
             if ($prevtourid > 0) {
                 try {
                     $prevmanager = new tour_manager();
@@ -231,17 +237,20 @@ final class observer
                     // Find the next sequence tour by looking for another action tour
                     // whose prev_tourid points to a different (still existing) sequence tour.
 
-                    // TODO problem when multiple people start tours in same course at the same time
+                    // TODO: MDL-0 problem when multiple people start tours in same course at the same time.
+                    $sql = 'SELECT id, configdata FROM {tool_usertours_tours}'
+                        . ' WHERE configdata LIKE ? AND configdata NOT LIKE ? AND configdata LIKE ?';
                     $nexttour = $DB->get_record_sql(
-                        'SELECT id, configdata FROM {tool_usertours_tours} WHERE configdata LIKE ? AND configdata NOT LIKE ? AND configdata LIKE ?',
+                        $sql,
                         [
                             '%"local_adaptive_course_audit_courseid":' . $courseid . '%',
                             '%"local_adaptive_course_audit_action":1%',
                             '%"local_adaptive_course_audit_prev_tourid":' . $prevtourid . '%',
                         ]
                     );
-                    //TODO WÄHLE ALLE tool_usertours_tours AUS WO DIE KURSID PASST, KANN ICH AUS AKTUELL GELÖSCHTER TOUR HOLEN GGF, UND local_adaptive_course_audit_prev_tourid existiert 
-                    //WÄHLE SO DIE NÄCHSTE TOUR AUS DIE GEStARTET WIRD, NICHT INDEM DIE ACTION TOUR DIE DANACH KOMMEN KÖNNTE DIESE BESTIMMT!
+                    // TODO: MDL-0 Select all tool_usertours_tours matching courseid; can be taken from the
+                    // just-deleted tour if needed, and where local_adaptive_course_audit_prev_tourid exists.
+                    // Pick the next tour to start from there, not by inferring it from the current action tour.
                     $nexttourid = 0;
                     if (!empty($nexttour)) {
                         $nexttourid = (int)$nexttour->id;
@@ -249,9 +258,10 @@ final class observer
 
                     // Update the course→tour mapping so lib.php picks up the next sequence tour.
                     if ($nexttourid > 0 && $courseid > 0) {
-                        //Add to local_adaptive_course_tour table an entry like the following, not update, use the functions that exist dont manipulate the db itself
-                        //| id  | courseid | tourid | timecreated | timemodified |
-                        //| 102 |        2 |    328 |  1772182732 |   1772182732 |
+                        // Add to local_adaptive_course_tour table an entry like the following, not update,
+                        // use the functions that exist, don't manipulate the db itself.
+                        // | id  | courseid | tourid | timecreated | timemodified |.
+                        // | 102 |        2 |    328 |  1772182732 |   1772182732 |.
                         $DB->insert_record('local_adaptive_course_tour', [
                             'courseid' => $courseid,
                             'tourid' => $nexttourid,
@@ -260,7 +270,11 @@ final class observer
                         ]);
                     }
                 } catch (\Throwable $exception) {
-                    debugging('Error deleting prev tour / updating next tour mapping after subtour end: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+                    debugging(
+                        'Error deleting prev tour / updating next tour mapping after subtour end: '
+                            . $exception->getMessage(),
+                        DEBUG_DEVELOPER
+                    );
                 }
             }
         }
@@ -271,6 +285,5 @@ final class observer
         } catch (\Throwable $exception) {
             debugging('Error deleting adaptive course audit tour: ' . $exception->getMessage(), DEBUG_DEVELOPER);
         }
-        // }
     }
 }

@@ -1,34 +1,63 @@
 [![Intro](pix/02_Intro_Katze_transparent.gif)](pix/02_Intro_Katze_transparent.gif)
 
-# Adaptives Kurs-Audit
+# Adaptive course audit
 
-**Machen Sie aus Ihrem Moodle-Kurs ein durchdachtes Lernumfeld:** Statt abstrakter Checklisten bekommen Sie eine geführte Tour direkt auf der Kursseite – mit klaren nächsten Schritten zur adaptiven Gestaltung. Hier die kompakte Übersicht für `local/adaptive_course_audit` (Moodle **4.5+**).
+`local/adaptive_course_audit` adds guided, in-course review tours to help teachers
+build adaptive learning paths in Moodle.
 
-## Materialien
+## What this plugin does
 
-Die Hinweise in den Touren beziehen sich u. a. auf diese PDFs im Ordner [`files/`](files/):
+- Adds a **Review course** navigation entry per course.
+- Runs an adaptive review for a whole course or a single section.
+- Creates short guided tours for quiz settings and three scenario-based setup paths.
+- Offers a **resume last audit** shortcut for teachers/managers.
+- Never changes course settings automatically; it only guides the user step by step.
+
+The audit logic includes checks such as:
+- content -> quiz -> follow-up unlock patterns
+- quiz feedback and adaptive behaviour
+- branching by grade / conditional progression
+- optional interactive/diagnostic patterns
+
+## Supported Moodle versions
+
+- Moodle **4.5+** (`$plugin->requires = 2024100700`).
+
+## Dependencies
+
+- Requires Moodle core subsystem plugin **User tours** (`tool_usertours`).
+- Keep User tours enabled for full plugin functionality.
+
+## Installation
+
+1. Copy the plugin to `local/adaptive_course_audit`.
+2. Visit **Site administration -> Notifications** or run `php admin/cli/upgrade.php`.
+3. Assign required capabilities and purge caches if needed.
+
+No Composer or npm build step is required on the target Moodle server.
+
+## Permissions
+
+- `local/adaptive_course_audit:view` to access the review page.
+- `moodle/course:manageactivities` to start review/scenario actions.
+
+## Included materials
+
+The guidance references these PDF resources from [`files/`](files/):
 
 - [Leitfaden Adaptive Lehre (PDF)](files/Leitfaden_Adaptive_Lehre.pdf)
 - [Adaptive Kursgestaltung in Moodle (PDF)](files/Adaptive_Kursgestaltung_in_Moodle.pdf)
 
-## Möglichkeiten
+## Project metadata (for plugin-directory submission)
 
-- **Kursnavigation:** Eintrag **„Kurs prüfen“** zur Audit-Seite; optional **„Letzte Prüfung fortsetzen“**, wenn Sie bereits eine Prüfung gestartet haben.
-- **Adaptive Prüfung** für den **ganzen Kurs** oder einen **Abschnitt:** Ergebnisse als **User Tour** auf der Kursseite, inklusive geführter Schritte zu Einstellungen. Es wird nichts automatisch geändert.
-- **Geführte Hilfe** je **sichtbarem Quiz** in einem Abschnitt: kompakte Tour durch zentrale Test-Einstellungen für adaptive Lehre.
-- **Drei Szenario-Touren:** Aufbauhilfen für einen **minimalistischen** adaptiven Abschnitt, einen **sequenziellen** Gesamtkurs oder ein **Kompass**-Modell mit freier Themenreihenfolge.
+Set these public URLs before publishing a plugin release:
 
-Kern der inhaltlichen Prüfung ist u. a. das Muster **„Erst lernen, dann nachweisen“** (Inhalte → Test → Folgeaktivitäten über Voraussetzungen/Abschluss), ergänzt um weitere Kurs- und Testregeln.
+- Repository URL: `TODO`
+- Issue tracker URL: `TODO`
+- Documentation URL: `TODO`
 
-## Voraussetzungen
+Also provide screenshots for key views:
 
-- **User Tours** müssen aktiviert sein.
-- `local/adaptive_course_audit:view` für die Seite; zum Starten von Prüfungen und Szenarien zusätzlich `moodle/course:manageactivities`.
-
-## Installation
-
-1. Plugin nach `local/adaptive_course_audit` kopieren.  
-2. **Website-Administration → Mitteilungen** oder `php admin/cli/upgrade.php`.  
-3. Passende Rollen mit den Capabilities versehen; bei Bedarf Caches leeren.
-
-Bei Problemen: Berechtigungen, sichtbare Abschnitte und User Tours prüfen.
+- review page overview
+- one guided quiz tour
+- one scenario tour flow

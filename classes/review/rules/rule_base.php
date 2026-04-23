@@ -18,7 +18,6 @@ declare(strict_types=1);
 
 namespace local_adaptive_course_audit\review\rules;
 
-defined('MOODLE_INTERNAL') || die();
 
 /**
  * Minimal base class for adaptive course audit rules.
@@ -26,9 +25,10 @@ defined('MOODLE_INTERNAL') || die();
  * Only contains the parts required by loop-based hints.
  *
  * @package     local_adaptive_course_audit
+ * @copyright   2025 Bastian Schmidt-Kuhl <bastian.schmidt-kuhl@ruhr-uni-bochum.de>
+ * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 abstract class rule_base implements rule_interface {
-
     /** @var string Rule key. */
     protected $key;
 
@@ -119,7 +119,7 @@ abstract class rule_base implements rule_interface {
      */
     protected function create_result(
         bool $status,
-        array $messages = [],
+        array $messages,
         int $targetid,
         int $courseid,
         array $actions = [],
@@ -139,4 +139,3 @@ abstract class rule_base implements rule_interface {
         ];
     }
 }
-

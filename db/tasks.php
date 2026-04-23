@@ -19,6 +19,8 @@
  *
  * @package     local_adaptive_course_audit
  * @category    task
+ * @copyright   2025 Bastian Schmidt-Kuhl <bastian.schmidt-kuhl@ruhr-uni-bochum.de>
+ * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
@@ -35,4 +37,3 @@ $tasks = [
         'disabled' => 0,
     ],
 ];
-

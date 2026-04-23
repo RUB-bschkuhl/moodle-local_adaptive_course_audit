@@ -18,7 +18,6 @@ declare(strict_types=1);
 
 namespace local_adaptive_course_audit\review\rules\loops;
 
-defined('MOODLE_INTERNAL') || die();
 
 use local_adaptive_course_audit\review\rules\rule_base;
 use tool_usertours\target;
@@ -27,13 +26,15 @@ use tool_usertours\target;
  * Loop rule: detect adaptive quiz question behaviour (adaptive/interactive modes).
  *
  * @package     local_adaptive_course_audit
+ * @copyright   2025 Bastian Schmidt-Kuhl <bastian.schmidt-kuhl@ruhr-uni-bochum.de>
+ * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class loop_quiz_adaptive_behaviour extends rule_base {
     /** @var string Rule identifier. */
-    public const rule_key = 'loop_quiz_adaptive_behaviour';
+    public const RULE_KEY = 'loop_quiz_adaptive_behaviour';
 
     /** @var string Target type. */
-    public const target_type = 'section';
+    public const TARGET_TYPE = 'section';
 
     /** @var string[] Behaviours that support multiple tries / practice loops. */
     private const SUPPORTED_BEHAVIOURS = [
@@ -48,8 +49,8 @@ class loop_quiz_adaptive_behaviour extends rule_base {
      */
     public function __construct() {
         parent::__construct(
-            self::rule_key,
-            self::target_type,
+            self::RULE_KEY,
+            self::TARGET_TYPE,
             get_string('rule_loop_quiz_adaptive_behaviour_name', 'local_adaptive_course_audit'),
             get_string('rule_loop_quiz_adaptive_behaviour_description', 'local_adaptive_course_audit'),
             'hint'
@@ -75,7 +76,7 @@ class loop_quiz_adaptive_behaviour extends rule_base {
             return null;
         }
 
-        $quizcms = array_values(array_filter($modules, static function($cm) {
+        $quizcms = array_values(array_filter($modules, static function ($cm) {
             return $cm->modname === 'quiz';
         }));
         if (empty($quizcms)) {
@@ -116,7 +117,7 @@ class loop_quiz_adaptive_behaviour extends rule_base {
             return null;
         }
 
-        $supported = array_values(array_filter($quizdetails, function($detail) {
+        $supported = array_values(array_filter($quizdetails, function ($detail) {
             return in_array($detail->behaviour, self::SUPPORTED_BEHAVIOURS, true);
         }));
 
@@ -126,7 +127,8 @@ class loop_quiz_adaptive_behaviour extends rule_base {
         foreach ($quizdetails as $detail) {
             $messages[] = get_string('rule_loop_quiz_adaptive_behaviour_found_quiz', 'local_adaptive_course_audit', [
                 'quiz' => $detail->name,
-                'behaviour' => $detail->behaviour !== '' ? $detail->behaviour : get_string('rule_loop_quiz_adaptive_behaviour_behaviour_unknown', 'local_adaptive_course_audit'),
+                'behaviour' => $detail->behaviour !== '' ? $detail->behaviour
+                    : get_string('rule_loop_quiz_adaptive_behaviour_behaviour_unknown', 'local_adaptive_course_audit'),
             ]);
         }
 
@@ -167,10 +169,14 @@ class loop_quiz_adaptive_behaviour extends rule_base {
                 ],
             ];
         } else {
-            $usednames = array_map(static function($detail) {
+            $usednames = array_map(static function ($detail) {
                 return $detail->name;
             }, $supported);
-            $messages[] = get_string('rule_loop_quiz_adaptive_behaviour_success', 'local_adaptive_course_audit', implode(', ', $usednames));
+            $messages[] = get_string(
+                'rule_loop_quiz_adaptive_behaviour_success',
+                'local_adaptive_course_audit',
+                implode(', ', $usednames)
+            );
         }
 
         $headline = $status
@@ -205,4 +211,3 @@ class loop_quiz_adaptive_behaviour extends rule_base {
         return $visible;
     }
 }
-

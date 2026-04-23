@@ -18,11 +18,10 @@
  * Upgrade steps for the Adaptive course audit plugin.
  *
  * @package     local_adaptive_course_audit
- * @copyright   2025 Moodle HQ
+ * @copyright   2025 Bastian Schmidt-Kuhl <bastian.schmidt-kuhl@ruhr-uni-bochum.de>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
 
 /**
  * Upgrade callback for local_adaptive_course_audit.
@@ -85,4 +84,3 @@ function xmldb_local_adaptive_course_audit_upgrade(int $oldversion): bool {
 
     return true;
 }
-

@@ -17,7 +17,7 @@
  * Add animated cat sprites to adaptive tour steps.
  *
  * @module     local_adaptive_course_audit/tour_sprites
- * @copyright  2025 Moodle HQ
+ * @copyright  2025 Bastian Schmidt-Kuhl <bastian.schmidt-kuhl@ruhr-uni-bochum.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 define(['jquery', 'core/config'], function($, coreConfig) {
