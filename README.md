@@ -47,17 +47,3 @@ The guidance references these PDF resources from [`files/`](files/):
 
 - [Leitfaden Adaptive Lehre (PDF)](files/Leitfaden_Adaptive_Lehre.pdf)
 - [Adaptive Kursgestaltung in Moodle (PDF)](files/Adaptive_Kursgestaltung_in_Moodle.pdf)
-
-## Project metadata (for plugin-directory submission)
-
-Set these public URLs before publishing a plugin release:
-
-- Repository URL: `TODO`
-- Issue tracker URL: `TODO`
-- Documentation URL: `TODO`
-
-Also provide screenshots for key views:
-
-- review page overview
-- one guided quiz tour
-- one scenario tour flow

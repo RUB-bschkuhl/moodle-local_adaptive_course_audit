@@ -30,5 +30,5 @@ $plugin->component = 'local_adaptive_course_audit';
 $plugin->dependencies = [
     'tool_usertours' => 2024100700,
 ];
-$plugin->maturity  = MATURITY_ALPHA;
+$plugin->maturity  = MATURITY_STABLE;
 $plugin->release   = '1.2.0';
