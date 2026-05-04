@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="local/adaptive_course_audit/db" VERSION="20241209" COMMENT="Install XML for local_adaptive_course_audit" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd">
+<XMLDB PATH="local/adaptive_course_audit/db" VERSION="2026050400" COMMENT="Install XML for local_adaptive_course_audit" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd">
     <TABLES>
-        <TABLE NAME="local_adaptive_course_tour" COMMENT="Stores adaptive course audit tour mappings">
+        <TABLE NAME="local_adaptive_course_audit_tour" COMMENT="Stores adaptive course audit tour mappings">
             <FIELDS>
                 <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
                 <FIELD NAME="courseid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
@@ -18,7 +18,7 @@
                 <INDEX NAME="courseiduniq" UNIQUE="true" FIELDS="courseid"/>
             </INDEXES>
         </TABLE>
-        <TABLE NAME="local_adaptive_course_review" COMMENT="Stores the latest audit-review start per user and course">
+        <TABLE NAME="local_adaptive_course_audit_review" COMMENT="Stores the latest audit-review start per user and course">
             <FIELDS>
                 <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
                 <FIELD NAME="courseid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>

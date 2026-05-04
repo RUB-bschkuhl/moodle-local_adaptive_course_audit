@@ -52,7 +52,7 @@ final class observer
         $courseid = 0;
         try {
             $mapping = $DB->get_record(
-                'local_adaptive_course_tour',
+                'local_adaptive_course_audit_tour',
                 ['tourid' => $maintourid],
                 'courseid',
                 IGNORE_MISSING
@@ -156,7 +156,7 @@ final class observer
         $courseid = 0;
 
         try {
-            $ismain = $DB->record_exists('local_adaptive_course_tour', ['tourid' => $tourid]);
+            $ismain = $DB->record_exists('local_adaptive_course_audit_tour', ['tourid' => $tourid]);
         } catch (\Throwable $exception) {
             debugging(
                 'Error checking adaptive course audit tour mapping: ' . $exception->getMessage(),
@@ -207,14 +207,14 @@ final class observer
             if ($userid > 0) {
                 try {
                     $mapping = $DB->get_record(
-                        'local_adaptive_course_tour',
+                        'local_adaptive_course_audit_tour',
                         ['tourid' => $tourid],
                         'courseid',
                         IGNORE_MISSING
                     );
                     $courseid = !empty($mapping) && !empty($mapping->courseid) ? (int)$mapping->courseid : 0;
                     if ($courseid > 0) {
-                        $DB->delete_records('local_adaptive_course_review', [
+                        $DB->delete_records('local_adaptive_course_audit_review', [
                             'courseid' => $courseid,
                             'userid' => $userid,
                         ]);
@@ -258,11 +258,11 @@ final class observer
 
                     // Update the course→tour mapping so lib.php picks up the next sequence tour.
                     if ($nexttourid > 0 && $courseid > 0) {
-                        // Add to local_adaptive_course_tour table an entry like the following, not update,
+                        // Add to local_adaptive_course_audit_tour table an entry like the following, not update,
                         // use the functions that exist, don't manipulate the db itself.
                         // | id  | courseid | tourid | timecreated | timemodified |.
                         // | 102 |        2 |    328 |  1772182732 |   1772182732 |.
-                        $DB->insert_record('local_adaptive_course_tour', [
+                        $DB->insert_record('local_adaptive_course_audit_tour', [
                             'courseid' => $courseid,
                             'tourid' => $nexttourid,
                             'timecreated' => time(),

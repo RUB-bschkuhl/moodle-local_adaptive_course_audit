@@ -65,7 +65,7 @@ function local_adaptive_course_audit_extend_navigation_course(
     if ($hasmanagecap && !empty($USER) && !empty($USER->id)) {
         try {
             $lastreview = $DB->get_record(
-                'local_adaptive_course_review',
+                'local_adaptive_course_audit_review',
                 ['courseid' => (int)$course->id, 'userid' => (int)$USER->id],
                 'id, sectionid',
                 IGNORE_MISSING
@@ -138,7 +138,7 @@ function local_adaptive_course_audit_extend_navigation_course(
     }
 
     try {
-        $acatour = $DB->get_record('local_adaptive_course_tour', ['courseid' => $course->id], '*', IGNORE_MISSING);
+        $acatour = $DB->get_record('local_adaptive_course_audit_tour', ['courseid' => $course->id], '*', IGNORE_MISSING);
         $hastour = !empty($acatour);
         if (!empty($acatour) && !empty($acatour->tourid)) {
             $tour = $DB->get_record(

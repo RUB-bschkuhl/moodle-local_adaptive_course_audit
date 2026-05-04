@@ -82,5 +82,22 @@ function xmldb_local_adaptive_course_audit_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026022400, 'local', 'adaptive_course_audit');
     }
 
+    if ($oldversion < 2026050400) {
+        // Frankenstyle table names: plugintype_pluginname_suffix (see MDL dev docs).
+        $oldtour = new xmldb_table('local_adaptive_course_tour');
+        $newtour = new xmldb_table('local_adaptive_course_audit_tour');
+        if ($dbman->table_exists($oldtour) && !$dbman->table_exists($newtour)) {
+            $dbman->rename_table($oldtour, 'local_adaptive_course_audit_tour');
+        }
+
+        $oldreview = new xmldb_table('local_adaptive_course_review');
+        $newreview = new xmldb_table('local_adaptive_course_audit_review');
+        if ($dbman->table_exists($oldreview) && !$dbman->table_exists($newreview)) {
+            $dbman->rename_table($oldreview, 'local_adaptive_course_audit_review');
+        }
+
+        upgrade_plugin_savepoint(true, 2026050400, 'local', 'adaptive_course_audit');
+    }
+
     return true;
 }

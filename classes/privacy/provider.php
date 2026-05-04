@@ -42,7 +42,7 @@ final class provider implements
     metadata_provider,
     request_provider {
     /** @var string Stores the latest review start per user/course. */
-    private const REVIEW_TABLE = 'local_adaptive_course_review';
+    private const REVIEW_TABLE = 'local_adaptive_course_audit_review';
 
     /**
      * Describe stored personal data.
@@ -52,13 +52,13 @@ final class provider implements
      */
     public static function get_metadata(collection $collection): collection {
         $collection->add_database_table(self::REVIEW_TABLE, [
-            'courseid' => 'privacy:metadata:local_adaptive_course_review:courseid',
-            'userid' => 'privacy:metadata:local_adaptive_course_review:userid',
-            'sectionid' => 'privacy:metadata:local_adaptive_course_review:sectionid',
-            'reviewurl' => 'privacy:metadata:local_adaptive_course_review:reviewurl',
-            'timecreated' => 'privacy:metadata:local_adaptive_course_review:timecreated',
-            'timemodified' => 'privacy:metadata:local_adaptive_course_review:timemodified',
-        ], 'privacy:metadata:local_adaptive_course_review');
+            'courseid' => 'privacy:metadata:local_adaptive_course_audit_review:courseid',
+            'userid' => 'privacy:metadata:local_adaptive_course_audit_review:userid',
+            'sectionid' => 'privacy:metadata:local_adaptive_course_audit_review:sectionid',
+            'reviewurl' => 'privacy:metadata:local_adaptive_course_audit_review:reviewurl',
+            'timecreated' => 'privacy:metadata:local_adaptive_course_audit_review:timecreated',
+            'timemodified' => 'privacy:metadata:local_adaptive_course_audit_review:timemodified',
+        ], 'privacy:metadata:local_adaptive_course_audit_review');
 
         return $collection;
     }

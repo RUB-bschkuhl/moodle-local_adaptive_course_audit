@@ -37,7 +37,7 @@ final class cleanup_tours extends scheduled_task {
     /** @var string Config marker for action/subtours owned by this plugin. */
     private const ACTION_TOUR_CONFIG_MARKER = 'local_adaptive_course_audit_action';
     /** @var string Table storing latest audit-review starts per user/course. */
-    private const REVIEW_START_TABLE = 'local_adaptive_course_review';
+    private const REVIEW_START_TABLE = 'local_adaptive_course_audit_review';
     /** @var string Core usertours config key for last major update timestamp. */
     private const TOUR_MAJOR_UPDATE_TIME_CONFIG = 'majorupdatetime';
     /** @var string Config key holding a plugin-set tour creation timestamp. */
@@ -71,7 +71,7 @@ final class cleanup_tours extends scheduled_task {
         $records = [];
         try {
             $records = $DB->get_records_select(
-                'local_adaptive_course_tour',
+                'local_adaptive_course_audit_tour',
                 $select,
                 $params,
                 'timemodified ASC, id ASC',
@@ -99,13 +99,13 @@ final class cleanup_tours extends scheduled_task {
 
             // Always remove the mapping row as it is stale (even if the tour is already gone).
             try {
-                $DB->delete_records('local_adaptive_course_tour', ['id' => (int)$record->id]);
+                $DB->delete_records('local_adaptive_course_audit_tour', ['id' => (int)$record->id]);
             } catch (\Throwable $exception) {
                 debugging('Error deleting stale adaptive course audit tour mapping: ' . $exception->getMessage(), DEBUG_DEVELOPER);
             }
         }
 
-        // Also remove stale action tours (subtours) which are not stored in local_adaptive_course_tour.
+        // Also remove stale action tours (subtours) which are not stored in local_adaptive_course_audit_tour.
         $this->cleanup_stale_action_tours($manager, $cutoff);
 
         // Clean up stale "latest audit review start" markers.

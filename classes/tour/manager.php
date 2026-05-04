@@ -198,7 +198,7 @@ final class manager
         // Clean up any stored mapping rows for this tour.
         try {
             global $DB;
-            $DB->delete_records('local_adaptive_course_tour', ['tourid' => $tourid]);
+            $DB->delete_records('local_adaptive_course_audit_tour', ['tourid' => $tourid]);
         } catch (\Throwable $exception) {
             debugging('Error deleting adaptive course audit mapping: ' . $exception->getMessage(), DEBUG_DEVELOPER);
         }

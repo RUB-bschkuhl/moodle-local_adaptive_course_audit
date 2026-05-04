@@ -44,9 +44,9 @@ use tool_usertours\tour;
 final class service
 {
     /** @var string Table storing plugin-owned tour mappings. */
-    private const TOUR_TABLE = 'local_adaptive_course_tour';
+    private const TOUR_TABLE = 'local_adaptive_course_audit_tour';
     /** @var string Table storing review audit results per course. */
-    private const REVIEW_TABLE = 'local_adaptive_course_review';
+    private const REVIEW_TABLE = 'local_adaptive_course_audit_review';
 
     /** @var string Teach tour key: combined quiz guided help. */
     private const TEACH_KEY_QUIZ_GUIDED_HELP = 'quizguidedhelp';
