@@ -59,7 +59,6 @@ $PAGE->set_title($pageheading);
 $PAGE->set_heading($coursename);
 $PAGE->navbar->add($pageheading);
 navigation_node::override_active_url($url);
-$PAGE->requires->css(new moodle_url('/local/adaptive_course_audit/styles.css'));
 
 if ($action === 'startreview') {
     require_sesskey();

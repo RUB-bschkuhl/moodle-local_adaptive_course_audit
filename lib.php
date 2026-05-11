@@ -227,7 +227,6 @@ function local_adaptive_course_audit_extend_navigation_course(
     // Load CSS and sprites when a tour is expected (existing DB mapping or explicit launch).
     if (($hastour && $iscourseview) || $shouldlaunch) {
         try {
-            $PAGE->requires->css(new moodle_url('/local/adaptive_course_audit/styles.css'));
             $PAGE->requires->js_call_amd(
                 'local_adaptive_course_audit/tour_sprites',
                 'init',
