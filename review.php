@@ -141,18 +141,21 @@ if ($action === 'startscenario') {
             'question_ready' => $questionready,
         ]);
         if (!empty($scenarioresult['status'])) {
-            // Turn on editing mode so the course edit UI (add section, activity picker) is visible.
-            $USER->editing = 1;
-
             if (!empty($scenarioresult['redirect']) && $scenarioresult['redirect'] instanceof moodle_url) {
                 $redirecturl = $scenarioresult['redirect'];
+                $redirecturl->param('editmode', 'on');
+                $redirecturl->param('sesskey', sesskey());
                 if (!empty($scenarioresult['tourid'])) {
                     $redirecturl->param('startacatour', (int)$scenarioresult['tourid']);
                 }
                 redirect($redirecturl);
             }
 
-            $redirectparams = ['id' => $course->id];
+            $redirectparams = [
+                'id' => $course->id,
+                'editmode' => 'on',
+                'sesskey' => sesskey(),
+            ];
             if (!empty($scenarioresult['tourid'])) {
                 $redirectparams['startacatour'] = (int)$scenarioresult['tourid'];
             }
