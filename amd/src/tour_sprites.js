@@ -127,8 +127,12 @@ define(['jquery', 'core/config'], function($, coreConfig) {
      * Entry point.
      */
     const buildDefaultConfig = () => {
-        const wwwroot = coreConfig && coreConfig.wwwroot ? coreConfig.wwwroot :
-        (window.M && window.M.cfg && window.M.cfg.wwwroot ? window.M.cfg.wwwroot : '');
+        let wwwroot = '';
+        if (coreConfig && coreConfig.wwwroot) {
+            wwwroot = coreConfig.wwwroot;
+        } else if (window.M && window.M.cfg && window.M.cfg.wwwroot) {
+            wwwroot = window.M.cfg.wwwroot;
+        }
         if (!wwwroot) {
             return null;
         }

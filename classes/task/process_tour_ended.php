@@ -29,7 +29,6 @@ use local_adaptive_course_audit\tour\manager as tour_manager;
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 final class process_tour_ended extends adhoc_task {
-
     /**
      * Execute the deferred tour-ended processing.
      *
