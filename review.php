@@ -276,10 +276,9 @@ $starturl = new moodle_url('/local/adaptive_course_audit/review.php', [
 
 $actioncell = '';
 if ($hasmanagecap) {
-    $iconhtml = $OUTPUT->pix_icon('i/refresh', get_string('startreview', 'local_adaptive_course_audit'));
     $actioncell = html_writer::link(
         $starturl,
-        $iconhtml,
+        get_string('startreview', 'local_adaptive_course_audit'),
         [
             'class' => 'btn btn-secondary local-adaptive-course-audit-start-button',
             'title' => get_string('startreview', 'local_adaptive_course_audit'),
@@ -355,10 +354,9 @@ if (!empty($sectioninfoall)) {
         ]);
 
         if ($hasmanagecap) {
-            $iconhtml = $OUTPUT->pix_icon('i/refresh', get_string('startsectionreview', 'local_adaptive_course_audit'));
             $actioncell = html_writer::link(
                 $sectionstarturl,
-                $iconhtml,
+                get_string('startsectionreview', 'local_adaptive_course_audit'),
                 [
                     'class' => 'btn btn-primary local-adaptive-course-audit-start-button',
                     'title' => get_string('startsectionreview', 'local_adaptive_course_audit'),
