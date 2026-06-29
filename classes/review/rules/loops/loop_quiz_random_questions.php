@@ -82,6 +82,46 @@ class loop_quiz_random_questions extends rule_base {
         $messages = [];
         $messages[] = get_string('rule_loop_quiz_random_questions_rationale', 'local_adaptive_course_audit');
 
+        $quizids = [];
+        foreach ($quizcms as $quizcm) {
+            if (!empty($quizcm->instance)) {
+                $quizids[] = (int)$quizcm->instance;
+            }
+        }
+
+        $slotcounts = [];
+        $randomslotcounts = [];
+        if (!empty($quizids)) {
+            try {
+                [$insql, $inparams] = $DB->get_in_or_equal($quizids, SQL_PARAMS_NAMED);
+
+                $slotrows = $DB->get_records_sql(
+                    "SELECT quizid, COUNT(1) AS cnt FROM {quiz_slots} WHERE quizid $insql GROUP BY quizid",
+                    $inparams
+                );
+                foreach ($slotrows as $row) {
+                    $slotcounts[(int)$row->quizid] = (int)$row->cnt;
+                }
+
+                [$insql2, $inparams2] = $DB->get_in_or_equal($quizids, SQL_PARAMS_NAMED);
+                $randomrows = $DB->get_records_sql("
+                    SELECT slot.quizid, COUNT(1) AS cnt
+                      FROM {quiz_slots} slot
+                      JOIN {question_set_references} qsr
+                        ON qsr.component = 'mod_quiz'
+                       AND qsr.questionarea = 'slot'
+                       AND qsr.itemid = slot.id
+                     WHERE slot.quizid $insql2
+                     GROUP BY slot.quizid
+                ", $inparams2);
+                foreach ($randomrows as $row) {
+                    $randomslotcounts[(int)$row->quizid] = (int)$row->cnt;
+                }
+            } catch (\Throwable $exception) {
+                debugging('Error checking quiz random questions for adaptive audit: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+            }
+        }
+
         $status = false;
         $actions = [];
 
@@ -90,23 +130,8 @@ class loop_quiz_random_questions extends rule_base {
                 continue;
             }
 
-            $slotcount = 0;
-            $randomslotcount = 0;
-            try {
-                $slotcount = (int)$DB->count_records('quiz_slots', ['quizid' => (int)$quizcm->instance]);
-                $randomslotcount = (int)$DB->count_records_sql("
-                    SELECT COUNT(1)
-                      FROM {quiz_slots} slot
-                      JOIN {question_set_references} qsr
-                        ON qsr.component = 'mod_quiz'
-                       AND qsr.questionarea = 'slot'
-                       AND qsr.itemid = slot.id
-                     WHERE slot.quizid = ?
-                ", [(int)$quizcm->instance]);
-            } catch (\Throwable $exception) {
-                debugging('Error checking quiz random questions for adaptive audit: ' . $exception->getMessage(), DEBUG_DEVELOPER);
-                continue;
-            }
+            $slotcount = $slotcounts[(int)$quizcm->instance] ?? 0;
+            $randomslotcount = $randomslotcounts[(int)$quizcm->instance] ?? 0;
 
             if ($slotcount <= 0) {
                 $messages[] = get_string('rule_loop_quiz_random_questions_empty', 'local_adaptive_course_audit', $quizcm->name);

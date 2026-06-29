@@ -83,24 +83,33 @@ class loop_quiz_adaptive_behaviour extends rule_base {
             return null;
         }
 
+        $quizids = [];
+        foreach ($quizcms as $quizcm) {
+            if (!empty($quizcm->instance)) {
+                $quizids[] = (int)$quizcm->instance;
+            }
+        }
+
+        $quizrecords = [];
+        if (!empty($quizids)) {
+            try {
+                [$insql, $inparams] = $DB->get_in_or_equal($quizids, SQL_PARAMS_NAMED);
+                $quizrecords = $DB->get_records_sql(
+                    "SELECT id, name, preferredbehaviour, attempts FROM {quiz} WHERE id $insql",
+                    $inparams
+                );
+            } catch (\Throwable $exception) {
+                debugging('Error loading quiz for adaptive behaviour audit: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+            }
+        }
+
         $quizdetails = [];
         foreach ($quizcms as $quizcm) {
             if (empty($quizcm->instance)) {
                 continue;
             }
 
-            try {
-                $quiz = $DB->get_record(
-                    'quiz',
-                    ['id' => (int)$quizcm->instance],
-                    'id, name, preferredbehaviour, attempts',
-                    IGNORE_MISSING
-                );
-            } catch (\Throwable $exception) {
-                debugging('Error loading quiz for adaptive behaviour audit: ' . $exception->getMessage(), DEBUG_DEVELOPER);
-                continue;
-            }
-
+            $quiz = $quizrecords[(int)$quizcm->instance] ?? null;
             if (empty($quiz)) {
                 continue;
             }

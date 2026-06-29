@@ -77,6 +77,31 @@ class loop_lesson_branching extends rule_base {
         $messages = [];
         $messages[] = get_string('rule_loop_lesson_branching_rationale', 'local_adaptive_course_audit');
 
+        $lessonids = [];
+        foreach ($lessoncms as $lessoncm) {
+            if (!empty($lessoncm->instance)) {
+                $lessonids[] = (int)$lessoncm->instance;
+            }
+        }
+
+        $allanswers = [];
+        if (!empty($lessonids)) {
+            try {
+                [$insql, $inparams] = $DB->get_in_or_equal($lessonids, SQL_PARAMS_NAMED);
+                $allanswers = $DB->get_records_sql(
+                    "SELECT id, lessonid, pageid, jumpto FROM {lesson_answers} WHERE lessonid $insql",
+                    $inparams
+                );
+            } catch (\Throwable $exception) {
+                debugging('Error loading lesson answers for adaptive audit: ' . $exception->getMessage(), DEBUG_DEVELOPER);
+            }
+        }
+
+        $answersbylessonid = [];
+        foreach ($allanswers as $answer) {
+            $answersbylessonid[(int)$answer->lessonid][] = $answer;
+        }
+
         $status = false;
         $branchinglessons = [];
         foreach ($lessoncms as $lessoncm) {
@@ -84,19 +109,7 @@ class loop_lesson_branching extends rule_base {
                 continue;
             }
 
-            // Get all answers for this lesson and look for explicit page jumps.
-            $answers = [];
-            try {
-                $answers = $DB->get_records(
-                    'lesson_answers',
-                    ['lessonid' => (int)$lessoncm->instance],
-                    '',
-                    'id, pageid, jumpto'
-                );
-            } catch (\Throwable $exception) {
-                debugging('Error loading lesson answers for adaptive audit: ' . $exception->getMessage(), DEBUG_DEVELOPER);
-                continue;
-            }
+            $answers = $answersbylessonid[(int)$lessoncm->instance] ?? [];
 
             if (empty($answers)) {
                 $messages[] = get_string(
@@ -110,7 +123,6 @@ class loop_lesson_branching extends rule_base {
             $jumptos = [];
             foreach ($answers as $answer) {
                 $jumpto = isset($answer->jumpto) ? (int)$answer->jumpto : 0;
-                // In lessons, jumpto > 0 points to a specific page id (explicit branching).
                 if ($jumpto > 0) {
                     $jumptos[$jumpto] = true;
                 }
